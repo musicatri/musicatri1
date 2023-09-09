@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>musicatri音乐控制</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.13.0/Sortable.min.js"></script>
+  <style>
+
+  #sortable-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  .slidecontainer {
+    width: 100%;
+  }
+  .slider {
+    width: 70%;
+  }
+
+  body {
+        cursor: url(url+'/cursor.png'), auto;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+    background-color: #f2f2f2;
+    color: #333;
+  }
+
+  h1 {
+    margin-top: 0;
+  }
+
+  h2 {
+    color: #333;
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+
+  body.dark-mode {
+    background-color: #333;
+    color: #f2f2f2;
+  }
+
+  body.dark-mode h2 {
+    color: #fff;
+  }
+
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .toggle-label {
+    margin-right: 10px;
+    color: #777;
+  }
+
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 20px;
+  }
+
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+
+  input:checked + .toggle-slider {
+    background-color: #2196F3;
+  }
+
+  input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #2196F3;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #0c7ddb;
+  }
+
+  body.dark-mode button {
+    background-color: #4f545c;
+    color: #fff;
+  }
+
+  body.dark-mode button:hover {
+    background-color: #42474d;
+  }
+  button.delete-button {
+    background-color: #2196F3;
+    color: #fff;
+    transition: background-color 0.3s ease;
+    }
+
+  button.delete-button:hover {
+    background-color: #f44336;
+  }
+  body.dark-mode button.delete-button {
+  background-color: #4f545c;
+  color: #fff;
+}
+
+body.dark-mode button.delete-button:hover {
+  background-color: #ff1744;
+}
+  li {
+    padding: 10px;
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+  }
+
+  li:hover {
+    background-color: #e6e6e6;
+  }
+
+  body.dark-mode li {
+    background-color: #333;
+    color: #f2f2f2;
+    border-color: #666;
+  }
+
+  body.dark-mode li:hover {
+    background-color: #444;
+  }
+
+  body.bg-image-active {
+       background-size: cover;
+         	background-repeat: no-repeat;
+         	min-height: 100vh;
+         	background: white url('https://musicatri.github.io/bg.jpg') center center no-repeat;
+         	-webkit-background-size: cover;
+         	-moz-background-size: cover;
+         	-o-background-size: cover;
+  }
+
+  </style>
+
+</head>
+<body>
+
+<h1>音乐控制
+</h1>
+<br>
+当前歌曲:<span id="cs"></span>
+<br>
+<div class="slidecontainer">
+  <input type="range" min="1" max="100" value="50" class="slider" style="width=70%" id="songtimeslider">
+</div>
+<br>
+<button type="button" id="stop" onclick="
+
+fetch(url+'/changesongstate', {
+    method: 'POST',
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({'guildid':guildid,'action':'pause'})
+})"
+>暂停</button>
+
+ <button type="button" id="next"
+ onclick="
+fetch(url+'/changesongstate', {
+    method: 'POST',
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({'guildid':guildid,'action':'next'})
+})"
+>下一首</button>
+
+<button type="button" onclick="
+var songname=prompt('输入歌名/youtube链接/bilibili链接/网易云歌曲链接:');
+if (songname==''){
+    alert('nice try')
+}
+else{
+fetch(url+'/requestnewsong', {
+    method: 'POST',
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({'songname':songname,'guildid':guildid})
+}).then(response => response.text())
+.then(response => alert(response))
+}
+
+" name="button">添加歌曲</button>
+<br>
+<h2>播放列表（可拖动更改顺序）：</h2>
+  <ul id="sortable-list">
+
+
+    <!-- List items will be dynamically generated here -->
+  </ul>
+  <div class="toggle-container">
+  <span class="toggle-label">Dark Mode</span>
+  <label class="toggle-switch">
+    <input type="checkbox" id="darkModeToggle">
+    <span class="toggle-slider"></span>
+  </label>
+</div>
+<div class="toggle-container">
+<span class="toggle-label">二次元</span>
+<label class="toggle-switch">
+<input type="checkbox" id="bgImageToggle">
+  <span class="toggle-slider"></span>
+</label>
+</div>
+
+
+
+  <script>
+  const prams = new URLSearchParams(window.location.search);
+const guildid = prams.get("id");
+const url='http://'+window.location.hostname +':'+location.port
+var isDragging = false;
+function toggleDarkMode() {
+  const body = document.querySelector("body");
+  const isDarkMode = body.classList.toggle("dark-mode");
+  localStorage.setItem("darkMode", isDarkMode);
+}
+
+function checkOSDarkModePreference() {
+  const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const body = document.querySelector("body");
+  body.classList.toggle("dark-mode", prefersDarkMode);
+  const darkModeToggle = document.getElementById("darkModeToggle");
+  darkModeToggle.checked = prefersDarkMode;
+  localStorage.setItem("darkMode", prefersDarkMode);
+}
+
+function initializeDarkMode() {
+  const storedDarkMode = localStorage.getItem("darkMode");
+
+  if (storedDarkMode !== null) {
+    const body = document.querySelector("body");
+    body.classList.toggle("dark-mode", storedDarkMode === "true");
+    const darkModeToggle = document.getElementById("darkModeToggle");
+    darkModeToggle.checked = storedDarkMode === "true";
+  } else {
+    checkOSDarkModePreference();
+  }
+}
+
+function toggleBackgroundImage() {
+  const body = document.querySelector("body");
+  const isChecked = bgImageToggle.checked;
+  body.classList.toggle("bg-image-active", isChecked);
+  localStorage.setItem("bgImageToggle", isChecked);
+}
+
+function initializeBackgroundImage() {
+  const storedBgImage = localStorage.getItem("bgImageToggle");
+
+  if (storedBgImage !== null) {
+    const body = document.querySelector("body");
+    body.classList.toggle("bg-image-active", storedBgImage === "true");
+    const bgImageToggle = document.getElementById("bgImageToggle");
+    bgImageToggle.checked = storedBgImage === "true";
+  }
+}
+
+function createDeleteButton(guildId, songName) {
+  const deleteButton = document.createElement("button");
+  deleteButton.classList.add("delete-button");
+  deleteButton.innerHTML = "&#10006;";
+  deleteButton.addEventListener("click", function () {
+    deleteSong(guildId, songName);
+  });
+  return deleteButton;
+}
+
+function deleteSong(guildId, songName) {
+  const data = {
+    guildid: guildId,
+    songname: songName
+  };
+
+  fetch(url+"/deletesong", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.text())
+  .then(result => {
+    console.log("Song deleted:", result);
+    // Perform any necessary UI updates after deleting the song
+  });
+}
+
+function postUpdatedList(updatedQueue) {
+
+  const data = {
+    guildid: guildid,
+    newqueue: updatedQueue
+  };
+
+  fetch(url+"/updatesongqueue", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.text())
+  .then(result => {
+    console.log("Updated list posted:", result);
+    // Perform any necessary UI updates or display success message
+  });
+}
+
+function getQueueFromServer() {
+  const sortableList = document.getElementById("sortable-list");
+  fetch(url+"/getcurrentqueue?id="+guildid)
+    .then(response => response.json())
+    .then(data => {
+      const updatedQueue = data.map(song => song.trim());
+      const previousQueue = Array.from(sortableList.children).map(item => item.textContent.trim());
+//.substring(0, song.trim().length - 1)
+//.substring(0, item.textContent.trim().length - 1)
+      if (arraysAreEqual(updatedQueue, previousQueue)) {
+        return;
+      }
+
+
+      sortableList.innerHTML = "";
+
+      const fragment = document.createDocumentFragment();
+
+      updatedQueue.forEach(song => {
+        const listItem = document.createElement("li");
+        listItem.textContent = song;
+        listItem.classList.add("list-item");
+
+        const deleteButton = createDeleteButton(guildid, song);
+        listItem.appendChild(deleteButton);
+
+        fragment.appendChild(listItem);
+      });
+
+      sortableList.appendChild(fragment);
+
+      const sortable = new Sortable(sortableList, {
+        handle: ".list-item",
+        animation: 150,
+        onEnd: function (evt) {
+          const updatedQueue = Array.from(sortableList.children).map(item => item.textContent.trim().substring(0, item.textContent.trim().length - 1));
+          postUpdatedList(updatedQueue);
+        },
+      });
+    });
+}
+
+function arraysAreEqual(array1, array2) {
+  if (array1.length !== array2.length) {
+    return false;
+  }
+
+  for (let i = 0; i < array1.length; i++) {
+    if (array1[i] !== array2[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+function getCurrentSong() {
+  fetch(url+"/getcurrentsong?id="+guildid)
+    .then(response => response.json())
+    .then(responsejson => {
+      document.getElementById("cs").innerHTML = responsejson.songname;
+      if (responsejson.playing == true){
+      document.getElementById("songtimeslider").max = responsejson.duration;
+      document.getElementById("songtimeslider").value = (Date.now()-responsejson.starttime)/1000;
+      console.log(responsejson.starttime);
+      console.log(Date.now());
+      console.log((Date.now()-responsejson.starttime)/1000);}
+
+    });
+}
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+  const darkModeToggle = document.getElementById("darkModeToggle");
+  darkModeToggle.addEventListener("change", toggleDarkMode);
+  const bgImageToggle = document.getElementById("bgImageToggle");
+  bgImageToggle.addEventListener("change", toggleBackgroundImage);
+  initializeDarkMode();
+  initializeBackgroundImage();
+  getQueueFromServer();
+  getCurrentSong();
+  setInterval(getQueueFromServer, 2000);
+  setInterval(getCurrentSong, 1000);
+
+
+  </script>
+</body>
+</html>
