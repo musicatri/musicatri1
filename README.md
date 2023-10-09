@@ -3,6 +3,8 @@
 支持添加播放列表，搜索网易云音乐歌曲<br>
 支持网页调整播放循序，添加/跳过歌曲等操作<br>
 还有其他一些像背单词的小功能和彩蛋<br>
+
+<h1>musicatri——open source discord music bot</h1>
 Support netease cloud music, bilibili, youtube, niconico douga <br>
 Supports adding playlists and searching NetEase Cloud Music songs.<br>
 A web client is avaliable to add songs and adjust the order of the queue list<br>
