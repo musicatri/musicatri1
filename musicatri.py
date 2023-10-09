@@ -41,6 +41,8 @@ else:
     pass
 with codecs.open(dirpath + "plays.json", encoding="utf-8", mode="r") as c:
     plays = json.loads(c.read())
+with codecs.open(dirpath + "langpref.json", encoding="utf-8", mode="r") as c:
+    langpref = json.loads(c.read())
 with codecs.open(dirpath + "haogan.json", encoding='utf-8', mode='r') as f:
     userdata = json.loads(f.read())
 with codecs.open(dirpath + "waifulist.txt", encoding="utf-8", mode="r") as f:
@@ -52,7 +54,14 @@ with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     print("主人我的云控制链接是"+key["songctladdr"])
 with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
     blacklist = json.loads(f.read())
+translations={}
+for file in os.listdir(dirpath+"langfiles"):
 
+    with codecs.open(dirpath + "langfiles/"+file, encoding="utf-8", mode="r") as f:
+        translations[file]=json.loads(f.read())
+print(translations)
+
+print(translations.keys())
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': dirpath+'ytdltemp/%(id)s.%(ext)s',
@@ -224,6 +233,20 @@ def mutisearch(s,t):
         if s.find(i) != -1:
             return True
     return False
+
+def replacetrans(message,userid,*replace):
+    userid=str(userid)
+
+    print(langpref)
+    print(langpref[userid])
+    print(translations[langpref[userid]])
+    if replace:
+        return translations[langpref[userid]][message].replace("%a",replace[0])
+    else:
+        print(langpref)
+        print(langpref[userid])
+        print( translations[langpref[userid]])
+        return translations[langpref[userid]][message]
 
 def testbyn(sn):
     sl = ["youtube.com", "youtu.be", "bilibili.com", "nicovideo.jp", "nico.ms", "b23.tv"]
@@ -508,6 +531,7 @@ async def on_message(message):
 @atri.event
 async def on_ready():
     print("主人我上线啦(｡･ω･｡)ﾉ♡")
+    print("主人我目前加入了"+str(len(atri.guilds))+"个服务器哦")
     writeplays.start()
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
 
@@ -562,6 +586,19 @@ async def unban(ctx, id):
     if str(ctx.message.author.id) == "834651231871434752":
         blacklist.pop(str(id))
         await ctx.send("狗书禁萨马雅萨西")
+
+@atri.command()
+async def langset(ctx, *lang):
+    global langpref
+    print(langpref)
+    if not lang:
+        await ctx.send("avaliable languages:"+str(os.listdir(dirpath+"langfiles")))
+
+    else:
+        if lang[0] in os.listdir(dirpath+"langfiles") or lang[0]+".json" in os.listdir(dirpath+"langfiles"):
+            langpref[str(ctx.author.id)]=lang[0].replace(".json","")+".json"
+        else:
+            await ctx.send("avaliable languages:"+str(os.listdir(dirpath+"langfiles")))
 
 
 @atri.command()
@@ -811,13 +848,13 @@ async def play(ctx, *a):
 
                         await addtoqueueyt(ctx,song)
             else:
-                await ctx.send("主人请先进语音")
+                await ctx.send(replacetrans("error_not_connected",str(ctx.author.id)))
         else:
             if not key["devmode"]:
-                await ctx.send("播放列表：")
+                await ctx.send(replacetrans("playlist",str(ctx.author.id)))
                 try:
                     if queues[ctx.guild.id].keys() == []:
-                        await ctx.send("没有任何歌曲")
+                        await ctx.send(replacetrans("no_songs",str(ctx.author.id)))
                     else:
                         bbbb = ""
                         for aaa in queues[ctx.guild.id].keys():
@@ -829,25 +866,42 @@ async def play(ctx, *a):
                         await ctx.send(bbbb)
                 except Exception as e:
                     #print(e)
-                    await ctx.send("没有任何歌曲")
+                    await ctx.send(replacetrans("no_songs",str(ctx.author.id)))
             else:
                 await ctx.send(str(queues))
+                await ctx.send(replacetrans("playlist",str(ctx.author.id)))
+                try:
+                    if queues[ctx.guild.id].keys() == []:
+                        await ctx.send(replacetrans("no_songs",str(ctx.author.id)))
+                    else:
+                        bbbb = ""
+                        for aaa in queues[ctx.guild.id].keys():
+                            badidea = aaa.find("⠀⠀⠀")
+                            if badidea != -1:
+                                aaa = aaa[:badidea]
+
+                            bbbb = bbbb + "\n" + aaa
+                        await ctx.send(bbbb)
+                except Exception as e:
+                    #print(e)
+                    await ctx.send(replacetrans("no_songs",str(ctx.author.id)))
                 #print(str(queues))
     except Exception as e:
+
         if key["devmode"]:
-            await ctx.send("亚托莉，坏掉了！")
+            await ctx.send(replacetrans("error_atri_broken",str(ctx.author.id)))
             with codecs.open(dirpath + "./err.txt", encoding='utf-8', mode='w') as file:
                 file.write(str(traceback.format_exc()))
             # send file to Discord in message
             with open("err.txt", "rb") as file:
-                await ctx.send("错误文件：", file=discord.File(file, "err.txt"))
+                await ctx.send( replacetrans("error_traceback",str(ctx.author.id)), file=discord.File(file, "err.txt"))
         else:
             await ctx.send("播放失败")
     print(cs)
 
 async def play163(ctx, id):
     if not await dl163ali(id):  # 调用await dl163ali，如果歌曲可以下载会下载歌曲，不可以的话会返回 False 所以下面不需要调用
-        await ctx.send("暂时不支持vip歌曲，ご主人様ごめなさい！！")
+        await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
         return
     songname=str(api163.getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(api163.getsongname(id))
     cs[ctx.guild.id] = songname
@@ -855,8 +909,8 @@ async def play163(ctx, id):
     songduration[songname]=getmp3duration(file)
     players[ctx.guild.id].play(discord.FFmpegPCMAudio(file), after=partial(ckqueue, ctx.guild))
     cstarttime[ctx.guild.id]=int(time.time()*1000)
-    await ctx.send("正在播放：" +songname)
-    await ctx.send("控制连接："+key["songctladdr"]+str(ctx.guild.id))
+    await ctx.send(replacetrans("now_playing",ctx.author.id,songname))
+    await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
     add1play(id)
 def pausesong(guildid):
     if guildid in pausetime.keys():
@@ -880,8 +934,8 @@ async def connect(ctx, *a):
     if ctx.author.voice:
         await ctx.message.author.voice.channel.connect()
         players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
-        await ctx.send("锵锵~亚托莉登场！")
-        await ctx.send("控制连接："+key["songctladdr"]+str(ctx.guild.id))
+        await ctx.send(replacetrans("connect",ctx.author.id))
+        await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
     else:
         await ctx.send("主人请先进语音")
 
@@ -1012,6 +1066,8 @@ async def writeplays():
         f.write(str(waifulist))
     with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="w") as f:
         f.write(json.dumps(blacklist))
+    with codecs.open(dirpath + "langpref.json", encoding="utf-8", mode="w") as f:
+        f.write(json.dumps(langpref))
     print("数据保存完毕，大家的信息我已经完美的记录下来的喵~")
     print("主人我正在打扫房间~")
     # for f in os.listdir(dirpath+"ytdltemp"):

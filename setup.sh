@@ -1,6 +1,5 @@
 sudo apt install python3-pip
 sudo apt install ffmpeg
-sudo apt install firefox-esr
 python3 -m venv ./pyenv
 source ./pyenv/bin/activate
 pip install gtts

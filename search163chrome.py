@@ -22,10 +22,10 @@ chrome_options = Options()
 
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--disable-gpu')
-if platform.system() == "Windows":
-    executable_path=dirpath+'chromedriver.exe'
-else:
-    executable_path='/usr/bin/chromium'
+# if platform.system() == "Windows":
+#     executable_path=dirpath+'chromedriver.exe'
+# else
+executable_path='/usr/bin/chromedriver'
 browser = webdriver.Chrome(executable_path=executable_path, chrome_options=chrome_options,desired_capabilities=caps)
 searchcache={}
 def get_id(id):
