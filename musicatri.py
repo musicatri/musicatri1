@@ -499,9 +499,6 @@ class chatgpt():
 
 @atri.event
 async def on_message(message):
-    if message.author.id == 602329417263349780:
-        print("delete")
-        await message.delete()
     if key["gptkey"]:
         if message.author == atri.user:
             return
