@@ -236,16 +236,15 @@ def mutisearch(s,t):
 
 def replacetrans(message,userid,*replace):
     userid=str(userid)
-
-    print(langpref)
-    print(langpref[userid])
-    print(translations[langpref[userid]])
     if replace:
+        if len(replace)>1:
+            chosenmessage=random.choice(translations[langpref[userid]][message])
+            if chosenmessage.find("%a") == -1:
+                return translations[langpref[userid]][message].replace("%a",replace[0])
+            else:
+                return translations[langpref[userid]][message]
         return translations[langpref[userid]][message].replace("%a",replace[0])
     else:
-        print(langpref)
-        print(langpref[userid])
-        print( translations[langpref[userid]])
         return translations[langpref[userid]][message]
 
 def testbyn(sn):
@@ -306,8 +305,8 @@ async def playt(ctx, vid):
     songduration[vid[1]["title"]]=vid[1]["duration"]
     players[ctx.guild.id].play(vid[0], after=partial(ckqueue, ctx.guild))
     cstarttime[ctx.guild.id]=int(time.time()*1000)
-    await ctx.send("正在播放" + vid[1]["title"])
-    await ctx.send("控制连接："+key["songctladdr"]+str(ctx.guild.id))
+    await ctx.send(    replacetrans("now_playing",ctx.author.id,vid[1]["title"]) )
+    await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
     add1play(vid[1]["url"])
 
 async def addtoqueueyt(ctx, song):
@@ -330,9 +329,9 @@ async def addtoqueueyt(ctx, song):
                 songaddtext=songaddtext+song[1]["title"] + "\n"
 
             else:
-                await ctx.send("停止添加！！！")
+                await ctx.send(replacetrans("stopadding",ctx.author.id))
                 break
-        await ctx.send("已将" +songaddtext+ "加入播放列表")
+        await ctx.send(replacetrans("added_to_playlist",ctx.author.id, songaddtext))
     else:
         try:
             if song[1]["title"] in queues[ctx.guild.id].keys():
@@ -344,7 +343,7 @@ async def addtoqueueyt(ctx, song):
             queues[ctx.guild.id][song[1]["title"]] = song
         songduration[song[1]["title"]]=song[1]["duration"]
 
-        await ctx.send("已将" + song[1]["title"] + "加入播放列表")
+        await ctx.send(replacetrans("added_to_playlist",ctx.author.id, song[1]["title"]))
 
 async def addtoqueue163(ctx, id):
     if type(id) == type([]):
@@ -352,7 +351,7 @@ async def addtoqueue163(ctx, id):
         for i in id:
             if adding[ctx.guild.id]:
                 if not await dl163ali(i):
-                    await ctx.send("暂时不支持vip歌曲，ご主人様ごめなさい！！")
+                    await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
                     continue
                 else:
                     songname=str(api163.getsongartists(i)).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(i))
@@ -371,16 +370,16 @@ async def addtoqueue163(ctx, id):
                             #print("reset queue")
                             queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i}]
 
-                        await ctx.send("已将 " +  songname+ " 加入播放列表")
+                        await ctx.send(replacetrans("added_to_playlist",ctx.author.id,songname))
                     except:
-                        await ctx.send("暂时不支持vip歌曲，ご主人様ごめなさい！！")
+                        await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
             else:
-                await ctx.send("停止添加！！！")
+                await ctx.send(replacetrans("stopading",ctx.author.id))
                 break
     else:
         a=await dl163ali(id)
         if not a:
-            await ctx.send("暂时不支持vip歌曲，ご主人様ごめなさい！！")
+            await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
             return
         songname=str(api163.getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(api163.getsongname(id))
         file=dirpath + "./songcache/" + id + ".mp3"
@@ -393,7 +392,7 @@ async def addtoqueue163(ctx, id):
         except Exception as e:
             queues[ctx.guild.id] = {}
             queues[ctx.guild.id][songname] =  [discord.FFmpegPCMAudio(file),{"url":id}]
-        await ctx.send("已将 " +  songname+ " 加入播放列表")
+        await ctx.send(replacetrans("added_to_playlist",ctx.author.id,songname))
 
 def ckqueue(guild, uselessd, uselessd2=None):
     try:
@@ -433,16 +432,11 @@ async def on_member_update(before, after):
                     if waifucd[str(before.id)] + 1800 > round(time.time()):
                         return
                 if str(after.status) == "online" or (str(after.status) == "away" and str(before.status) == "offline"):
-                    if random.randint(0, 10) > 5:
-                        await after.send("主人终于回家了喵，好开心！")
-                    else:
-                        await after.send(str(after.name) + "，欢饮回家。所以，是……先洗澡？先吃饭？还是说……玩~原~神？")
+                    await after.send(replacetrans("master_arrive_home_catgirl",before.id,str(after.name),True))
                     waifucd[str(before.id)] = round(time.time())
                 elif str(after.status) == "offline" or str(after.status) == "away":
-                    if random.randint(0, 10) > 5:
-                        await after.send("主人这么快就要离开我了吗？")
-                    else:
-                        await after.send("主人不能再陪我一会吗！")
+                    await after.send(replacetrans("choice_master_leave",before.id,str(after.name),True))
+
                     waifucd[str(before.id)] = round(time.time())
                 else:
                     pass
@@ -585,7 +579,7 @@ async def ban(ctx, id, reason=" "):
 async def unban(ctx, id):
     if str(ctx.message.author.id) == "834651231871434752":
         blacklist.pop(str(id))
-        await ctx.send("狗书禁萨马雅萨西")
+        await ctx.send(replacetrans("master_is_so_kind",ctx.author.id))
 
 @atri.command()
 async def langset(ctx, *lang):
@@ -616,15 +610,15 @@ async def spelling(ctx):
     if ctx.author.voice:
         pass
     else:
-        await ctx.send("主人请加入一个语音频道，不然亚托莉没法给您报单词哦！")
+        await ctx.send(replacetrans("spelling_please_connect_to_voice",ctx.author.id))
         return
-    await ctx.send('''拼写测试开始！\n请使用以下格式添加单词！\n["单词一","单词二","单词三"]''')
+    await ctx.send(replacetrans("spelling_test_start_add",ctx.author.id))
     returnlist = await atri.wait_for('message', check=check)
 
     try:
         splist = ast.literal_eval(returnlist.content)
         random.shuffle(splist)
-        await ctx.send("主人的单词亚托莉已经记住啦，毕竟亚托莉是高性能的呢！现在亚托莉要把单词收走了哦!(需要删除信息权限)")
+        await ctx.send(replacetrans("spelling_start",ctx.author.id))
         await returnlist.delete()
         if ctx.voice_client:
             if ctx.voice_client.is_connected:
@@ -643,42 +637,40 @@ async def spelling(ctx):
                     cstarttime[ctx.guild.id]=int(time.time()*1000)
                 except:
                     pass
-                await ctx.send("请输入(r让亚托莉重新念一遍)：")
+                await ctx.send(replacetrans("spelling_test_please_respond",ctx.author.id))
                 ansobj = await atri.wait_for('message', check=check)
                 #print("waiting")
                 ans = ansobj.content
                 if ans.lower() == w.lower():
                     #print("correct")
-                    await ctx.send("答对了,没想到笨蛋主人记忆力还行呢！")
+                    await ctx.send(replacetrans("spelling_correct",ctx.author.id))
                     break
                 elif ans == "r":
                     #print("retry")
                     pass
                 else:
                     #print("wrong")
-                    await ctx.send("答错了，正确答案是" + w + "。看来主人还是离不开我呢！")
+                    await ctx.send(replacetrans("spelling_wrong",ctx.author.id,w))
                     reviewlist.append(w)
                     while (1):
                         players[ctx.guild.id].play(discord.FFmpegPCMAudio(dirpath + "./temp" + str(ctx.guild.id) + ".mp3"))
-                        await ctx.send("请输入" + w + "(r让亚托莉重新念一遍)：")
+                        await ctx.send(replacetrans("spelling_wrong_reenter",ctx.author.id,w))
                         ansobj = await atri.wait_for('message', check=check)
                         ans = ansobj.content
                         if ans.lower() == w.lower():
-                            await ctx.send("答对了,继续！")
+                            await ctx.send(replacetrans("spelling_wrong_correct",ctx.author.id))
                             break
                         elif ans == "r":
                             pass
                         else:
-                            await ctx.send("答错了，给你看答案了还能写错，ご主人様の頭は大丈夫？")
+                            await ctx.send(replacetrans("spelling_wrong_wrong",ctx.author.id))
                     break
         await ctx.send(str((len(splist) - len(reviewlist) / len(splist))) + "分")
-        await ctx.send("今天和主人一起学习的单词：")
-        await ctx.send(splist)
-        await ctx.send("主人答错的单词：")
-        await ctx.send(reviewlist)
+        await ctx.send(replacetrans("spelling_learned_words",ctx.author.id,splist))
+        await ctx.send(replacetrans("spelling_failed_words",ctx.author.id,reviewlist))
 
     except:
-        await ctx.send("亚托莉，坏掉了！")
+        await ctx.send(replacetrans("error_atri_broken",ctx.author.id))
         with codecs.open(dirpath + "./err.txt", encoding='utf-8', mode='w') as file:
             file.write(str(traceback.format_exc()))
         # send file to Discord in message
@@ -691,12 +683,12 @@ async def suki(ctx, *v):
 
     # print(userdata)
     if not v:
-        await ctx.send("0-10有多喜欢？")
+        await ctx.send(replacetrans("suki_missing_args",ctx.author.id))
         return
     try:
         int(v[0])
     except:
-        await ctx.send("0-10有多喜欢？")
+        await ctx.send(replacetrans("suki_missing_args",ctx.author.id))
     try:
         if userdata[str(ctx.author.id)]["dailylimittime"] != str(date.today()):
             # print("resetting limits")
@@ -706,36 +698,36 @@ async def suki(ctx, *v):
         if not userdata[str(ctx.author.id)]["haogandu"] < -20:
             if userdata[str(ctx.author.id)]["dailylimits"]["suki"] < 10:
                 if int(v[0]) > 5:
-                    await ctx.send("最爱你啦！")
+                    await ctx.send(replacetrans("suki_love",ctx.author.id))
                     userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] + 1
                 else:
                     if not userdata[str(ctx.author.id)]["haogandu"] > 500:
-                        await ctx.send("ばか、変態、うるさい、知らない！")
+                        await ctx.send(replacetrans("suki_kirai",ctx.author.id))
                         userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 5
                     else:
                         await ctx.send("？？？")
                         await asyncio.sleep(5)
-                        await ctx.send("呜呜呜")
-                        await ctx.send("呜呜呜呜呜")
-                        await ctx.send("ばか、変態、うるさい、知らない！")
+                        await ctx.send(replacetrans("suki_kirai_cry1",ctx.author.id))
+                        await ctx.send(replacetrans("suki_kirai_cry2",ctx.author.id))
+                        await ctx.send(replacetrans("suki_kirai",ctx.author.id))
                         userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 400
             else:
                 if userdata[str(ctx.author.id)]["haogandu"] > 500:
                     if int(v[0]) > 5:
-                        await ctx.send("主人你这么喜欢我吗？好高兴!")
+                        await ctx.send(replacetrans("suki_very_suki",ctx.author.id))
                         userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] + 10
                     else:
                         await ctx.send("？？？")
                         await asyncio.sleep(5)
-                        await ctx.send("呜呜呜")
-                        await ctx.send("呜呜呜呜呜")
-                        await ctx.send("ばか、変態、うるさい、知らない！")
+                        await ctx.send(replacetrans("suki_kirai_cry1",ctx.author.id))
+                        await ctx.send(replacetrans("suki_kirai_cry2",ctx.author.id))
+                        await ctx.send(replacetrans("suki_kirai",ctx.author.id))
                         userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 400
                 else:
-                    await ctx.send("萝莉控是吧，我要报警了！")
+                    await ctx.send(replacetrans("suki_atricon",ctx.author.id))
                     userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 10
         else:
-            await ctx.send("是警察叔叔吗？我这边有个很恶心的恋童癖萝莉控在骚扰我，快救救我啊！")
+            await ctx.send(replacetrans("suki_report_police",ctx.author.id))
             userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 20
         userdata[str(ctx.author.id)]["dailylimits"]["suki"] = userdata[str(ctx.author.id)]["dailylimits"]["suki"] + 1
         userdata[str(ctx.author.id)]["dailylimittime"] = str(date.today())
@@ -749,10 +741,10 @@ async def suki(ctx, *v):
         userdata[str(ctx.author.id)]["dailylimits"]["727"] = 0
         userdata[str(ctx.author.id)]["haogandu"] = random.randint(0, 5)
         if int(v[0]) > 5:
-            await ctx.send("最爱你啦！")
+            await ctx.send(replacetrans("suki_love",ctx.author.id))
             userdata[str(ctx.author.id)]["haogandu"] = 1
         else:
-            await ctx.send("ばか、変態、うるさい、知らない！")
+            await ctx.send(replacetrans("suki_kirai",ctx.author.id))
             userdata[str(ctx.author.id)]["haogandu"] = -5
 
 @atri.command(aliases=["摸头"])
@@ -925,9 +917,9 @@ async def disconnect(ctx, *a):
     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
     if players[ctx.guild.id]:
         await players[ctx.guild.id].disconnect()
-        await ctx.send("再见！")
+        await ctx.send(replacetrans("bye",ctx.author.id))
     else:
-        await ctx.send("主人我还没有进语音就想把我赶走，不理你了！")
+        await ctx.send(replacetrans("bye_mad",ctx.author.id))
 
 @atri.command(aliases=["连接"])
 async def connect(ctx, *a):
@@ -937,7 +929,7 @@ async def connect(ctx, *a):
         await ctx.send(replacetrans("connect",ctx.author.id))
         await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
     else:
-        await ctx.send("主人请先进语音")
+        await ctx.send(replacetrans("error_not_connected",ctx.author.id))
 
 @atri.command(aliases=["数数"])
 async def count(ctx, *v):
@@ -946,7 +938,7 @@ async def count(ctx, *v):
         players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
         players[ctx.guild.id].play(discord.FFmpegPCMAudio(dirpath + "count.mp3"))
     else:
-        await ctx.send("主人请先进语音")
+        await ctx.send(replacetrans("error_not_connected",ctx.author.id))
 
 @atri.command(aliases=["劈瓜", "gua"])
 async def pigua(ctx, *v):
@@ -955,7 +947,7 @@ async def pigua(ctx, *v):
         players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
         players[ctx.guild.id].play(discord.FFmpegPCMAudio(dirpath + "gua.mp3"))
     else:
-        await ctx.send("杀人啦！")
+        await ctx.send(replacetrans("killer",ctx.author.id))
 
 @atri.command(aliases=["gomenasai", "对不起", "本当にごめんなさい", "ほんどにごめなさい"])
 async def sorry(ctx, *v):
@@ -972,7 +964,7 @@ async def sorry(ctx, *v):
         await asyncio.sleep(5)
         await ctx.voice_client.disconnect()
     else:
-        await ctx.send("红豆泥！私密马赛~~~")
+        await ctx.send(replacetrans("very_sorry",ctx.author.id))
 
 @atri.command(aliases=["暂停","resume","继续"])
 async def pause(ctx, *a):
@@ -985,16 +977,16 @@ async def pause(ctx, *a):
             players[int(ctx.guild.id)].resume()
             cstarttime[int(ctx.guild.id)]=cstarttime[ctx.guild.id]+pausesong(ctx.guild.id)
     else:
-        await ctx.send("我都没和主人在一起还要我暂停？？")
+        await ctx.send(replacetrans("not_connected_pause",ctx.author.id))
 
 @atri.command(aliases=["停"])
 async def stop(ctx, *a):
     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
     if players[ctx.guild.id]:
         players[ctx.guild.id].stop()
-        await ctx.send("已停止播放")
+        await ctx.send(replacetrans("stop",ctx.author.id))
     else:
-        await ctx.send("我都没和主人在一起还要我停止播放？？")
+        await ctx.send(replacetrans("not_connected_stop",ctx.author.id))
 
 @atri.command(aliases=["跳过", "下一首"])
 async def skip(ctx, a=1):
@@ -1010,7 +1002,7 @@ async def skip(ctx, a=1):
                     badidea = id.find("⠀⠀⠀")
                     if badidea != -1:
                         id = id[:badidea]
-                    await ctx.send("正在播放" + id)
+                    await ctx.send(replacetrans("now_playing",ctx.author.id,id))
                     cs[ctx.guild.id] = id
                 except:
                     players[ctx.guild.id].stop()
@@ -1019,14 +1011,14 @@ async def skip(ctx, a=1):
                     badidea = id.find("⠀⠀⠀")
                     if badidea != -1:
                         id = id[:badidea]
-                    await ctx.send("正在播放" + id)
+                    await ctx.send(replacetrans("now_playing",ctx.author.id,id))
                     cs[ctx.guild.id] = id
             else:
                 players[ctx.guild.id].stop()
         except:
             players[ctx.guild.id].stop()
     else:
-        await ctx.send("我都没和主人在一起还要我跳过？？")
+        await ctx.send(replacetrans("not_conneted_skip",ctx.author.id))
 
 @atri.command()
 async def level(ctx, *a):
@@ -1035,25 +1027,25 @@ async def level(ctx, *a):
 @atri.command()
 async def stopadding(ctx):
     adding[ctx.guild.id] = False
-    await ctx.send("行")
+    await ctx.send("ok")
 
 @atri.command()
 async def clearqueue(ctx):
-    await ctx.send("行")
+    await ctx.send("ok")
     queues[ctx.guild.id] = {}
 
 @atri.command(aliases=["当前歌曲", "cs"])
 async def currentsong(ctx, *a):
     if cs[ctx.guild.id]:
-        await ctx.send("正在播放" + cs[ctx.guild.id])
+        await ctx.send(replacetrans("now_playing",ctx.author.id,cs[ctx.guild.id]))
 
 @atri.command()
 async def fix(ctx):
     user=await atri.fetch_user(834651231871434752)
     await user.send("快过来修我！")
-    await ctx.send("已通知开发者，请稍等")
+    await ctx.send(replacetrans("developer_notified",ctx.author.id))
 
-@tasks.loop(seconds=11451 if not key["devmode"] else 15  )
+@tasks.loop(seconds=11451 if not key["devmode"] else 120  )
 async def writeplays():
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
     await asyncio.sleep(5)
