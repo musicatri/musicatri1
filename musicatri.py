@@ -56,9 +56,9 @@ with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
     blacklist = json.loads(f.read())
 translations={}
 for file in os.listdir(dirpath+"langfiles"):
-
-    with codecs.open(dirpath + "langfiles/"+file, encoding="utf-8", mode="r") as f:
-        translations[file]=json.loads(f.read())
+    if file.find(".json") != -1:
+        with codecs.open(dirpath + "langfiles/"+file, encoding="utf-8", mode="r") as f:
+            translations[file]=json.loads(f.read())
 print(translations)
 
 print(translations.keys())
@@ -236,6 +236,19 @@ def mutisearch(s,t):
 
 def replacetrans(message,userid,*replace):
     userid=str(userid)
+    if userid not in langpref:
+        langpref[userid]="zh.json"
+        if replace:
+            if len(replace)>1:
+                chosenmessage=random.choice(translations[langpref[userid]][message])
+                if chosenmessage.find("%a") == -1:
+                    return "You have not set a language, defaulting to Chinese Simplified. You can set a language with "+name[0]+"langset.\n"+translations[langpref[userid]][message].replace("%a",replace[0])
+                else:
+                    return "You have not set a language, defaulting to Chinese Simplified. You can set a language with "+name[0]+"langset.\n"+translations[langpref[userid]][message]
+            return "You have not set a language, defaulting to Chinese Simplified. You can set a language with "+name[0]+"langset.\n"+translations[langpref[userid]][message].replace("%a",replace[0])
+        else:
+            return "You have not set a language, defaulting to Chinese Simplified. You can set a language with "+name[0]+"langset.\n"+translations[langpref[userid]][message]
+
     if replace:
         if len(replace)>1:
             chosenmessage=random.choice(translations[langpref[userid]][message])
@@ -587,7 +600,6 @@ async def langset(ctx, *lang):
     print(langpref)
     if not lang:
         await ctx.send("avaliable languages:"+str(os.listdir(dirpath+"langfiles")))
-
     else:
         if lang[0] in os.listdir(dirpath+"langfiles") or lang[0]+".json" in os.listdir(dirpath+"langfiles"):
             langpref[str(ctx.author.id)]=lang[0].replace(".json","")+".json"
