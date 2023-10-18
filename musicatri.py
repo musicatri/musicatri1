@@ -74,7 +74,6 @@ ytdl_format_options = {
     'no_warnings': True,
     'default_search': 'auto',
     'source_address': '0.0.0.0',  # bind to ipv4 since ipv6 addresses cause issues sometimes
-    'max_downloads':50,
 #    'download_archive':dirpath+'ytdldownloads.txt'
 }
 if key["ytdlproxy"]:
