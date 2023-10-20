@@ -101,6 +101,10 @@ async def requestnewsong():
     players[guildid] = discord.utils.get(atri.voice_clients, guild=guild)
     print(a)
     id = await getsongid(a)
+    if type(id) == type(()):
+        #目前还没有实现网页歌曲选择
+        #默认选取第一手歌
+        id=id[0]
     if id == -1:
         return "这是什么歌曲，亚托莉无法播放哦!"
     if not players[guildid].is_playing():
@@ -806,9 +810,8 @@ async def rankings(ctx):
 
     await ctx.send(msg)
 async def songchoice(ctx,xuanze):
-    xuanze=xuanze[1:]
     while(1):
-        msg=replacetrans("select_song",str(ctx.author.id)+"\n")
+        msg=replacetrans("select_song",str(ctx.author.id))
         for x in range(len(xuanze)):
             msg = msg + str(x) + ".  " + str(api163.getsongartists(xuanze[x])).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(xuanze[x])) +"\n"
         await ctx.send(msg)
@@ -838,13 +841,10 @@ async def play(ctx, *a):
                     if id:
                         if type(id) == type([]):
                             fid = id.pop(0)
-                            if not fid:
-                                #returned a search reult list
-                                await play163(ctx,await songchoice(ctx,id))
-                            else:
-                                await play163(ctx, fid)
-
-                                await addtoqueue163(ctx, id)
+                            await play163(ctx, fid)
+                            await addtoqueue163(ctx, id)
+                        elif type(id) == type(()):
+                            await play163(ctx,await songchoice(ctx,id))
                         else:
                             await play163(ctx, id)
                     else:
@@ -857,8 +857,10 @@ async def play(ctx, *a):
                             await playt(ctx, song)
                 else:
                     if id:
-                        if not id[0]:
-                            await addtoqueue163(ctx, await songchoice(ctx,id[1:]))
+                        #returned a search reult list
+
+                        if type(id)==type(()):
+                            await addtoqueue163(ctx, await songchoice(ctx,id))
                         else:
                             await addtoqueue163(ctx, id)
                     else:

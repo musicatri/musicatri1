@@ -58,13 +58,17 @@ def get_id_and_cache_data(id):
         soup = bs4.BeautifulSoup(page_text, 'html.parser')
         music_ids = soup.select("div[class='td w0'] a")  # 音乐id
         music_names = soup.select("div[class='td w0'] a b")  # 音乐名字
-        music_singers = soup.select("div[class='td w1'] a")  # 歌手名
-        searchresults=[False]
-        for x in range(len(music_ids)):
-            music_id = music_ids[x].get("href")
+        music_singers = soup.select("div[class='td w1']")  # 歌手名
+        searchresults=[]
+        for n in range(len(music_ids)):
+
+            music_id = music_ids[n].get("href")
             music_id = music_id.split('=')[-1]
-            music_name = music_names[x].get("title")
-            music_singer = music_singers[x].string
+            music_name = music_names[n].get("title")
+            music_singer = music_singers[n].string
+            print(music_singer)
+            if music_singer == None:
+                music_singer=str(music_singers[n].a.string) 
             if not exists(dirpath+"./datacache/"+music_id+".s163dddd") or not exists(dirpath+"./datacache/"+id):
                 with open(dirpath+"./datacache/"+music_id+".s163dddd", encoding='utf-8', mode='w') as f:
                     f.write(str([music_singer,music_name]))
@@ -73,10 +77,8 @@ def get_id_and_cache_data(id):
         browser.execute_script("window.open('about:blank');","newblank")
         browser.close()
         browser.switch_to.window(browser.window_handles[0])
-        print(searchresults)
-        print(music_ids)
+        searchresults=tuple(searchresults)
         searchcache[id]=searchresults
-
         return [searchresults]
     except:
         print("search failed")
