@@ -59,9 +59,6 @@ for file in os.listdir(dirpath+"langfiles"):
     if file.find(".json") != -1:
         with codecs.open(dirpath + "langfiles/"+file, encoding="utf-8", mode="r") as f:
             translations[file]=json.loads(f.read())
-print(translations)
-
-print(translations.keys())
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': dirpath+'ytdltemp/%(id)s.%(ext)s',
@@ -808,6 +805,19 @@ async def rankings(ctx):
         ct = ct + 1
 
     await ctx.send(msg)
+async def songchoice(ctx,xuanze):
+    xuanze=xuanze[1:]
+    while(1):
+        msg=replacetrans("select_song",str(ctx.author.id)+"\n")
+        for x in range(len(xuanze)):
+            msg = msg + str(x) + ".  " + str(api163.getsongartists(xuanze[x])).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(xuanze[x])) +"\n"
+        await ctx.send(msg)
+        selection = await atri.wait_for('message', )
+        selection=selection.content
+        try:
+            return xuanze[int(selection)]
+        except:
+            await ctx.send("?")
 
 @atri.command(aliases=["播放", "queue", "播放列表"])
 async def play(ctx, *a):
@@ -828,8 +838,13 @@ async def play(ctx, *a):
                     if id:
                         if type(id) == type([]):
                             fid = id.pop(0)
-                            await play163(ctx, fid)
-                            await addtoqueue163(ctx, id)
+                            if not fid:
+                                #returned a search reult list
+                                await play163(ctx,await songchoice(ctx,id))
+                            else:
+                                await play163(ctx, fid)
+
+                                await addtoqueue163(ctx, id)
                         else:
                             await play163(ctx, id)
                     else:
@@ -842,10 +857,12 @@ async def play(ctx, *a):
                             await playt(ctx, song)
                 else:
                     if id:
-                        await addtoqueue163(ctx, id)
+                        if not id[0]:
+                            await addtoqueue163(ctx, await songchoice(ctx,id[1:]))
+                        else:
+                            await addtoqueue163(ctx, id)
                     else:
                         song = await getyt(a)
-
                         await addtoqueueyt(ctx,song)
             else:
                 await ctx.send(replacetrans("error_not_connected",str(ctx.author.id)))

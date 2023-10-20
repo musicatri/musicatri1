@@ -1,3 +1,5 @@
+#借鉴 https://cloud.tencent.com/developer/article/1794963
+#
 from os.path import dirname
 from os.path import realpath
 import requests
@@ -20,8 +22,8 @@ caps["pageLoadStrategy"] = "eager"
 # 实现无可视化界面（固定写法）
 chrome_options = Options()
 
-chrome_options.add_argument('--headless')
-chrome_options.add_argument('--disable-gpu')
+# chrome_options.add_argument('--headless')
+# chrome_options.add_argument('--disable-gpu')
 if platform.system() == "Windows":
     executable_path=dirpath+'chromedriver.exe'
 else:
@@ -55,23 +57,27 @@ def get_id_and_cache_data(id):
         page_text = browser.execute_script("return document.documentElement.outerHTML")
         soup = bs4.BeautifulSoup(page_text, 'html.parser')
         music_ids = soup.select("div[class='td w0'] a")  # 音乐id
-        music_id = music_ids[0].get("href")
-        music_id = music_id.split('=')[-1]
-        if not exists(dirpath+"./datacache/"+music_id+".s163dddd") or not exists(dirpath+"./datacache/"+id):
-            with open(dirpath+"./datacache/"+music_id+".s163dddd", encoding='utf-8', mode='w') as f:
-                music_names = soup.select("div[class='td w0'] a b")  # 音乐名字
-                music_name = music_names[0].get("title")
-                music_singers = soup.select("div[class='td w1'] a")  # 歌手名
-                music_singer = music_singers[0].string
-                a=[]
-                a.append(music_name)
-                a.append(music_singer)
-                f.write(str(a))
-        searchcache[id]=music_id
+        music_names = soup.select("div[class='td w0'] a b")  # 音乐名字
+        music_singers = soup.select("div[class='td w1'] a")  # 歌手名
+        searchresults=[False]
+        for x in range(len(music_ids)):
+            music_id = music_ids[x].get("href")
+            music_id = music_id.split('=')[-1]
+            music_name = music_names[x].get("title")
+            music_singer = music_singers[x].string
+            if not exists(dirpath+"./datacache/"+music_id+".s163dddd") or not exists(dirpath+"./datacache/"+id):
+                with open(dirpath+"./datacache/"+music_id+".s163dddd", encoding='utf-8', mode='w') as f:
+                    f.write(str([music_singer,music_name]))
+            #searchresults.append([music_id,music_name,music_singer])
+            searchresults.append(music_id)
         browser.execute_script("window.open('about:blank');","newblank")
         browser.close()
         browser.switch_to.window(browser.window_handles[0])
-        return [music_id]
+        print(searchresults)
+        print(music_ids)
+        searchcache[id]=searchresults
+
+        return [searchresults]
     except:
         print("search failed")
         print(traceback.format_exc())

@@ -63,5 +63,6 @@
 "atri_saving_data":"主人我正在保存数据喵~",
 "atri_saving_data_finished":"数据保存完毕，大家的信息我已经完美的记录下来的喵~",
 "atri_cleaning":"主人我正在打扫房间~",
-"atri_cleaning_finished":"主人，房间已经清扫的干干净净了喵~"
+"atri_cleaning_finished":"主人，房间已经清扫的干干净净了喵~",
+"select_song":"请选择歌曲（输入歌曲前面的数字即可）"
 }
