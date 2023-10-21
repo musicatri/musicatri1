@@ -17,6 +17,7 @@ echo "{}" > plays.json
 echo "{}" > haogan.json
 echo "{}" > atrikey.json
 echo "{}" > blacklist.json
+echo "{}" > langpref.json
 mkdir songcache
 mkdir datacache
 mkdir ytdltemp

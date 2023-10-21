@@ -429,7 +429,7 @@ cs = {}
 players = {}
 waifucd = {}
 intents = discord.Intents.all()
-atri = commands.AutoShardedBot(command_prefix=name, intents=intents)
+atri = commands.AutoShardedBot(command_prefix=name, intents=intents,help_command=None)
 scm={}
 songduration={}
 cstarttime={}
@@ -1055,7 +1055,42 @@ async def level(ctx, *a):
 async def stopadding(ctx):
     adding[ctx.guild.id] = False
     await ctx.send("ok")
+@atri.command()
+async def help(ctx):
+    await ctx.send("""
+    A. """+name[0]+"""play <YouTube/Bilibili video/playlist url,NetEase Cloud Music Link/Playlist/Search Keyword >
+        Join a voice channel and play the specified song. If a search keyword is provided, it will search for the keyword on NetEase Cloud Music and play the first result.
+        If music is already playing, add the song to the playlist.
+        If no specific song is specified, return the playlist.
 
+    B. """+name[0]+"""apause
+
+        Pause the current song.
+
+    C. """+name[0]+"""continue
+
+        Resume playing if the current song is paused.
+
+    D. """+name[0]+"""currentsong
+
+        return the name of the song that is currently playing
+
+    G. """+name[0]+"""skip
+
+        Skip the current song
+
+    H. """+name[0]+"""stop
+
+        Stop playback
+
+    I. """+name[0]+"""connect
+
+        Join to the voice channel
+
+    J. """+name[0]+"""disconnect
+
+        leave the voice channel
+        """)
 @atri.command()
 async def clearqueue(ctx):
     await ctx.send("ok")

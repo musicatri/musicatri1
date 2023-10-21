@@ -60,15 +60,18 @@ def get_id_and_cache_data(id):
         music_names = soup.select("div[class='td w0'] a b")  # 音乐名字
         music_singers = soup.select("div[class='td w1']")  # 歌手名
         searchresults=[]
+        if
         for n in range(len(music_ids)):
-
+            print(n)
             music_id = music_ids[n].get("href")
             music_id = music_id.split('=')[-1]
+            print(music_id)
             music_name = music_names[n].get("title")
             music_singer = music_singers[n].string
+            print(music_name)
             print(music_singer)
             if music_singer == None:
-                music_singer=str(music_singers[n].a.string) 
+                music_singer=str(music_singers[n].a.string)
             if not exists(dirpath+"./datacache/"+music_id+".s163dddd") or not exists(dirpath+"./datacache/"+id):
                 with open(dirpath+"./datacache/"+music_id+".s163dddd", encoding='utf-8', mode='w') as f:
                     f.write(str([music_singer,music_name]))
