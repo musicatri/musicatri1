@@ -1,4 +1,6 @@
 <h1>musicatri——open source discord music bot</h1>
+
+<a href="readme-cn.md">Chinese中文</a><br>
 Support netease cloud music, bilibili, youtube, niconico douga <br>
 Supports adding playlists and searching NetEase Cloud Music songs.<br>
 A web client is avaliable to add songs and adjust the order of the queue list<br>
