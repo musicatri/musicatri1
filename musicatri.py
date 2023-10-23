@@ -1063,7 +1063,7 @@ async def help(ctx):
         If music is already playing, add the song to the playlist.
         If no specific song is specified, return the playlist.
 
-    B. """+name[0]+"""apause
+    B. """+name[0]+"""pause
 
         Pause the current song.
 
