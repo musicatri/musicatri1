@@ -1,14 +1,16 @@
-<h1>musicatri——开源discord音乐机器人</h1>
-支持网易云音乐，b站，youtube，niconico <br>
-支持添加播放列表，搜索网易云音乐歌曲<br>
-支持网页调整播放循序，添加/跳过歌曲等操作<br>
-还有其他一些像背单词的小功能和彩蛋<br>
-
 <h1>musicatri——open source discord music bot</h1>
+
+<a href="readme-cn.md">Chinese中文</a><br>
 Support netease cloud music, bilibili, youtube, niconico douga <br>
 Supports adding playlists and searching NetEase Cloud Music songs.<br>
 A web client is avaliable to add songs and adjust the order of the queue list<br>
 There are other small features and easter eggs like vocabulary tests<br>
+
+<h3>How to Configure:</h3><br>
+0. Clone the repo
+1. Depending on your operating system, run setup.bat/setup.sh.<br>
+2. For Windows systems, ensure that Chrome/Chromium and ffmpeg are installed, and place the corresponding chromedriver in the musicatri directory to enable Netease Cloud Music search functionality.<br>
+Note: setup.sh will only automatically install ffmpeg and chromium on systems that use apt (e.g., Debian/Ubuntu). For other systems, please install them manually (e.g., Arch/Fedora).<br>
 
 <h3>TODO:</h3><br>
 add language selection and English support☑️<br>
