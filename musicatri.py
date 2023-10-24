@@ -2,6 +2,7 @@
 from flask import Flask
 from flask import request
 from flask import send_file
+from flask import send_from_directory
 import ast
 import asyncio
 import codecs
@@ -31,8 +32,8 @@ import threading
 import json
 from mutagen.mp3 import MP3
 from waitress import serve
-app = Flask(__name__)
 dirpath = dirname(realpath(__file__)) + "/"
+app = Flask(__name__)
 print("主人，我的工作目录是 "+dirpath+" 喵~")
 #http://musicatrictl.akutan445.com:4949/songctl?id=
 if platform.system() == "Windows":
@@ -217,12 +218,9 @@ def changesongstate():
 @app.route('/songctl',methods = ['GET'])
 def songctl():
     return send_file(dirpath+"website/songctl.html")
-@app.route('/cursor.png',methods = ['GET'])
-def asda():
-    return send_file(dirpath+"website/cursor.png")
-@app.route('/styles.css',methods = ['GET'])
-def asdassdad():
-    return send_file(dirpath+"website/styles.css")
+@app.route('/<path:path>')
+def send_report(path):
+    return send_from_directory('website', path)
 
 def getmp3duration(file):
     audio = MP3(file)
