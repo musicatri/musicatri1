@@ -38,8 +38,6 @@ print("主人，我的工作目录是 "+dirpath+" 喵~")
 #http://musicatrictl.akutan445.com:4949/songctl?id=
 if platform.system() == "Windows":
     cmd("chcp 936")
-else:
-    pass
 with codecs.open(dirpath + "plays.json", encoding="utf-8", mode="r") as c:
     plays = json.loads(c.read())
 with codecs.open(dirpath + "langpref.json", encoding="utf-8", mode="r") as c:

@@ -22,8 +22,8 @@ caps["pageLoadStrategy"] = "eager"
 # 实现无可视化界面（固定写法）
 chrome_options = Options()
 
-# chrome_options.add_argument('--headless')
-# chrome_options.add_argument('--disable-gpu')
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--disable-gpu')
 if platform.system() == "Windows":
     executable_path=dirpath+'chromedriver.exe'
 else:
