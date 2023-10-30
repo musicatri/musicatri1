@@ -811,7 +811,7 @@ async def songchoice(ctx,xuanze):
     while(1):
         msg=replacetrans("select_song",str(ctx.author.id))
         for x in range(len(xuanze)):
-            msg = msg + str(x) + ".  " + str(api163.getsongartists(xuanze[x])).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(xuanze[x])) +"\n"
+            msg = msg + str(x-1) + ".  " + str(api163.getsongartists(xuanze[x])).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(xuanze[x])) +"\n"
         await ctx.send(msg)
         selection = await atri.wait_for('message', )
         selection=selection.content

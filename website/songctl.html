@@ -178,10 +178,11 @@ body.dark-mode button.delete-button:hover {
 </head>
 <body>
 
-<h1>音乐控制
+<h1 ><div id="songctltitle">音乐控制</div>
 </h1>
 <br>
-当前歌曲:<span id="cs"></span>
+<div id="currentsongtitle">
+当前歌曲:</div><span id="cs"></span>
 <br>
 <div class="slidecontainer">
   <input type="range" min="1" max="100" value="50" class="slider" style="width=70%" id="songtimeslider">
@@ -197,7 +198,7 @@ fetch(url+'/changesongstate', {
     },
     body: JSON.stringify({'guildid':guildid,'action':'pause'})
 })"
->暂停</button>
+>⏯</button>
 
  <button type="button" id="next"
  onclick="
@@ -209,9 +210,9 @@ fetch(url+'/changesongstate', {
     },
     body: JSON.stringify({'guildid':guildid,'action':'next'})
 })"
->下一首</button>
+>⏩</button>
 
-<button type="button" onclick="
+<button type="button" id="addsong" onclick="
 var songname=prompt('输入歌名/youtube链接/bilibili链接/网易云歌曲链接:');
 if (songname==''){
     alert('nice try')
@@ -230,7 +231,7 @@ fetch(url+'/requestnewsong', {
 
 " name="button">添加歌曲</button>
 <br>
-<h2>播放列表（可拖动更改顺序）：</h2>
+<h2><div id="playlist">播放列表（可拖动更改顺序）：</h2>
   <ul id="sortable-list">
 
 
@@ -251,6 +252,15 @@ fetch(url+'/requestnewsong', {
 </label>
 </div>
 
+<div class="toggle-container">
+  <span class="toggle-label">Language:</span>
+  <select id="languageSelector">
+    <option value="en">English</option>
+    <option value="ja">日本語</option>
+    <option value="zh">中文</option>
+
+  </select>
+</div>
 
 
   <script>
@@ -441,6 +451,69 @@ function getRandomInt(max) {
   getCurrentSong();
   setInterval(getQueueFromServer, 2000);
   setInterval(getCurrentSong, 1000);
+
+  var userLanguage = localStorage.getItem("userLanguage") || navigator.language || navigator.userLanguage;
+
+    // Function to set the user's language and update the content
+    function setUserLanguage(language) {
+      userLanguage = language;
+      localStorage.setItem("userLanguage", language);
+      updateContent();
+    }
+
+    // Function to update the content based on the selected language
+    function updateContent() {
+      if (userLanguage.startsWith("zh")) {
+
+
+     }
+     else if (userLanguage.startsWith("ja")) {
+       // User's language is Japanese
+       // Update the page content with Japanese translations
+       document.getElementById("currentsongtitle").innerHTML ="再生中：";
+       document.getElementById("songctltitle").innerHTML ="ミュージック☆コントロール";
+       document.getElementById("addsong").innerHTML ="曲を追加";
+       document.getElementById("playlist").innerHTML ="プレイリスト（ドラッグで順番を変更のことができる！）：";
+
+       // Update other elements with Japanese translationsaddsong
+
+     }
+      else if (userLanguage.startsWith("en")) {
+       // Default to English if the user's language is not Japanese
+       // Update the page content with English translations
+       document.getElementById("currentsongtitle").innerHTML ="Current Song：";
+       document.getElementById("songctltitle").innerHTML ="Music Control";
+       document.getElementById("addsong").innerHTML ="Add Songs";
+       document.getElementById("playlist").innerHTML ="Playlist(Drag to change the order of the songs!)";
+       // Update other elements with English translations
+     }
+    }
+
+    // Create the language dropdown
+
+    // Set the initial value of the dropdown based on the user's stored language
+    const languageSelector = document.getElementById("languageSelector");
+    languageSelector.value = userLanguage;
+
+    languageSelector.addEventListener("change", () => {
+
+      const selectedLanguage = languageSelector.value;
+        if (selectedLanguage.startsWith("zh")) {
+          location.reload()
+        }
+      userLanguage = selectedLanguage;
+      localStorage.setItem("userLanguage", selectedLanguage);
+      updateContent();
+
+    });
+
+    // Update the content based on the stored user language
+
+
+
+
+
+updateContent();
 
 
   </script>
