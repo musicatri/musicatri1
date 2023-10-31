@@ -18,4 +18,4 @@ add language selection and English support☑️<br>
 add support for searching youtube<br>
 create a new chrome instance for each active guild for song searching, or create a queue for song search requests<br>
 use a list instead of a dictonary for queue list<br>
-
+use something other than a pull request every 2 second to update song information for the website<br>
