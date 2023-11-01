@@ -78,3 +78,13 @@ def get_id_name_singer(id):
     music_singers = soup.select("div[class='td w1'] a")  # 歌手名
     music_singer = music_singers[0].string
     return [music_id, music_name, music_singer]
+def login163():
+    browser = webdriver.Chrome(executable_path=executable_path, chrome_options=chrome_options,desired_capabilities=caps)
+    url = "http://music.163.com/"
+    browser.get(url=url)
+    input("登录完成请按回车")
+    browser.quit()
+#
+#
+if __name__ == '__main__':
+    login163()

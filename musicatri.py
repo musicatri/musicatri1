@@ -974,20 +974,39 @@ async def pigua(ctx, *v):
 
 @atri.command(aliases=["gomenasai", "对不起", "本当にごめんなさい", "ほんどにごめなさい"])
 async def sorry(ctx, *v):
+    "特殊需求652615081682796549"
+    try:
+        if ctx.message.author.voice:
+            for m in ctx.message.author.voice.channel.members:
+                if m.id == 652615081682796549:
+                    # await ctx.send("目标频道里有可怕的coffee，拒绝执行。红豆泥！私密马赛~~~")
+                    raise RuntimeError("当前频道里有可怕的coffee，拒绝执行。红豆泥！私密马赛~~~")
+        if ctx.voice_client:
+            if ctx.voice_client.is_connected:
+                for m in ctx.voice_client.channel.members:
+                    if m.id == 652615081682796549:
+                        # await ctx.send("当前频道里有可怕的coffee，拒绝执行。红豆泥！私密马赛~~~")
+                        raise RuntimeError("当前频道里有可怕的coffee，拒绝执行。红豆泥！私密马赛~~~")
+        pass
+    except Exception as e:
+        await ctx.send("亚托莉炸了 https://cdn.discordapp.com/attachments/1123003419137941626/1168483140919103528/ev012b3.png")
+        with open("err.txt", "w") as file:
+            file.write(str(traceback.format_exc()))
+        # send file to Discord in message
+        with open("err.txt", "rb") as file:
+            await ctx.send("错误文件：", file=discord.File(file, "err.txt"))
+        return
     if ctx.author.voice:
         if ctx.voice_client:
             if ctx.voice_client.is_connected:
                 await ctx.voice_client.disconnect()
         await ctx.message.author.voice.channel.connect()
-        # user = await ctx.guild.query_members(user_ids=[602329417263349780]) # list of members with userid
-        # user = user[0]
-        # await user.move_to(None)
-        players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
-        players[ctx.guild.id].play(discord.FFmpegPCMAudio(dirpath + "honndonigomenasai.mp3"))
+        players[ctx.guild] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
+        players[ctx.guild].play(discord.FFmpegPCMAudio(dirpath + "honndonigomenasai.mp3"))
         await asyncio.sleep(5)
         await ctx.voice_client.disconnect()
     else:
-        await ctx.send(replacetrans("very_sorry",ctx.author.id))
+        await ctx.send("红豆泥！私密马赛~~~")
 
 @atri.command(aliases=["暂停","resume","继续"])
 async def pause(ctx, *a):
