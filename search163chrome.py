@@ -107,7 +107,7 @@ def get_id_name_singer(id):
     return [music_id, music_name, music_singer]
     print(traceback.format_exc())
 def login163():
-    browser = webdriver.Chrome(executable_path=executable_path, chrome_options=chrome_options,desired_capabilities=caps)
+    browser = webdriver.Chrome(executable_path=executable_path,desired_capabilities=caps)
     url = "http://music.163.com/"
     browser.get(url=url)
     input("登录完成请按回车")
