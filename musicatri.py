@@ -445,7 +445,6 @@ async def on_member_update(before, after):
                     waifucd[str(before.id)] = round(time.time())
                 elif str(after.status) == "offline" or str(after.status) == "away":
                     await after.send(replacetrans("choice_master_leave",before.id,str(after.name),True))
-
                     waifucd[str(before.id)] = round(time.time())
                 else:
                     pass
@@ -814,7 +813,7 @@ async def songchoice(ctx,xuanze):
         selection = await atri.wait_for('message', )
         selection=selection.content
         try:
-            return xuanze[int(selection)]
+            return xuanze[int(selection)-1]
         except:
             await ctx.send("?")
 
