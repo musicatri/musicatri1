@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-\
+import subprocess
+from os.path import dirname
+from os.path import realpath
+dirpath = dirname(realpath(__file__)) + "/"
+with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
+    # aaa=r.read().encode().decode('utf-8-sig') win7 workaround
+    key = json.loads(r.read())
+    name = key["name"]
+    print("主人我的云控制链接是"+key["songctladdr"])
+subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
+cloudmusicapiurl = 'http://127.0.0.1:'+key["NeteaseCloudMusicApiPort"]
+cookie=""
+from os.path import exists
+from os import system as cmd
 from flask import Flask
 from flask import request
 from flask import send_file
@@ -14,10 +28,6 @@ import time
 import traceback
 from datetime import date
 from functools import partial
-from os import system as cmd
-from os.path import dirname
-from os.path import exists
-from os.path import realpath
 import discord
 import requests
 import yt_dlp
@@ -32,10 +42,7 @@ import json
 from mutagen.mp3 import MP3
 from waitress import serve
 import aiohttp
-import subprocess
 from urllib.parse import quote
-
-dirpath = dirname(realpath(__file__)) + "/"
 app = Flask(__name__)
 print("主人，我的工作目录是 "+dirpath+" 喵~")
 #http://musicatrictl.akutan445.com:4949/songctl?id=
@@ -49,11 +56,7 @@ with codecs.open(dirpath + "haogan.json", encoding='utf-8', mode='r') as f:
     userdata = json.loads(f.read())
 with codecs.open(dirpath + "waifulist.txt", encoding="utf-8", mode="r") as f:
     waifulist = ast.literal_eval(f.read())
-with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
-    # aaa=r.read().encode().decode('utf-8-sig') win7 workaround
-    key = json.loads(r.read())
-    name = key["name"]
-    print("主人我的云控制链接是"+key["songctladdr"])
+
 with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
     blacklist = json.loads(f.read())
 translations={}
@@ -80,11 +83,7 @@ if key["ytdlproxy"]:
 print("我的名字是" + str(name) + "。谢谢主人给我起这么好听的名字！")
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
-subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
-cloudmusicapiurl = 'http://127.0.0.1:'+key["NeteaseCloudMusicApiPort"]
-time.sleep(1)
-loginres=requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
-cookie=quote(loginres.json()['cookie'])
+
 
 @app.route('/updatesongqueue', methods = ['POST'])
 def updatesongqueue():
@@ -543,7 +542,8 @@ async def on_ready():
     print("主人我目前加入了"+str(len(atri.guilds))+"个服务器哦")
     writeplays.start()
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
-
+    loginres=requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
+    cookie=quote(loginres.json()['cookie'])
 
 async def getsongid(sn):
     b = sn.find("song?id=")
