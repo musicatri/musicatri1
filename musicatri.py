@@ -134,6 +134,21 @@ async def getplaylist(sn):
             for i in id:
                 nl.append(str(i['id']))
             return nl
+async def getalbum(sn):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(cloudmusicapiurl + "/album?id="+sn) as resp:
+            results = await resp.json()
+            id =results["songs"]
+            for i in id:
+                with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
+                    i["artists"]=i.pop("ar")
+                    i["album"] = i.pop("al")
+                    f.write(json.dumps(i))
+
+            nl = []
+            for i in id:
+                nl.append(str(i['id']))
+            return nl
 
 @app.route('/updatesongqueue', methods = ['POST'])
 def updatesongqueue():
@@ -600,15 +615,27 @@ async def getsongid(sn):
         except:
             if testbyn(sn):
                 return False
-            if sn.find("list?id=") != -1:
+            listtextl = sn.find("lbum?id=")
+            if listtextl != -1:
+
                 # slow
-                sn=sn[sn.find("list?id=") + 8:]
-                return  await getplaylist(sn)
+                sn = sn[listtextl + 8:]
+                print(sn)
+                return await getalbum(sn)
+            listtextl = sn.find("list?id=")
+            if listtextl != -1:
+                # slow
+                sn=sn[listtextl + 8:]
+                return await getplaylist(sn)
             # reload(search163)
             # slow
             #id = await asyncio.get_event_loop().run_in_executor(None, search163.get_id_and_cache_data, sn)
             # searcg 1
+
+
             id= await searchsong(sn)
+            #lbum?id=
+
 
     else:
         n = sn[b + 8:]
