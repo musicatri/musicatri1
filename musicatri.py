@@ -3,6 +3,7 @@ import subprocess
 from os.path import dirname
 from os.path import realpath
 import codecs
+import json
 dirpath = dirname(realpath(__file__)) + "/"
 with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     # aaa=r.read().encode().decode('utf-8-sig') win7 workaround
@@ -20,8 +21,6 @@ from flask import send_file
 from flask import send_from_directory
 import ast
 import asyncio
-import codecs
-import json
 import os
 import platform
 import random
