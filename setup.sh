@@ -10,4 +10,8 @@ echo "{}" > langpref.json
 mkdir songcache
 mkdir datacache
 mkdir ytdltemp
+git clone https://github.com/Binaryify/NeteaseCloudMusicApi.git
+cd NeteaseCloudMusicApi
+npm install
+cd ..
 python setup.py

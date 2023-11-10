@@ -26,12 +26,13 @@ from discord.ext import tasks
 from gtts import gTTS
 import api163
 import get163playlist
-import search163chrome as search163
 import openai
 import threading
 import json
 from mutagen.mp3 import MP3
 from waitress import serve
+import aiohttp
+cloudmusicapiurl = 'http://127.0.0.1:3000'
 dirpath = dirname(realpath(__file__)) + "/"
 app = Flask(__name__)
 print("主人，我的工作目录是 "+dirpath+" 喵~")
@@ -551,10 +552,13 @@ async def getsongid(sn):
                 return r
             # reload(search163)
             # slow
-            id = await asyncio.get_event_loop().run_in_executor(None, search163.get_id_and_cache_data, sn)
-            if not id[0]:
-                return -1
-            id = id[0]
+            #id = await asyncio.get_event_loop().run_in_executor(None, search163.get_id_and_cache_data, sn)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(cloudmusicapiurl+"/search?keywords="+sn) as resp:
+                    results = await resp.json()
+                    if results["result"]['songCount']==0:
+                        return -1
+                    id = tuple(results["result"]["songs"])
     else:
         n = sn[b + 8:]
         if n.find("&") == -1:
@@ -804,18 +808,24 @@ async def rankings(ctx):
         ct = ct + 1
 
     await ctx.send(msg)
+def artistslistpurifier(j):
+    nl=[]
+    for i in j:
+        nl.append(i['name'])
+    return nl
 async def songchoice(ctx,xuanze):
     print(xuanze)
     while(1):
         await ctx.send(replacetrans("select_song",str(ctx.author.id)))
         msg=""
-        for x in range(0,len(xuanze)):
-            msg = msg + str(x) + ".  " + str(api163.getsongartists(xuanze[x])).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(xuanze[x])) +"\n"
+        for x in range(len(xuanze)):
+            cr=xuanze[x]
+            msg = msg + str(x) + ".  " + str(artistslistpurifier(cr['artists'])) + "——" + cr["name"] +"\n"
         await ctx.send(msg)
         selection = await atri.wait_for('message', )
         selection=selection.content
         try:
-            return xuanze[int(selection)-1]
+            return str(xuanze[int(selection)-1]["id"])
         except:
             await ctx.send("?")
 
