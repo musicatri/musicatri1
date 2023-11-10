@@ -118,6 +118,7 @@ async def searchsong(sn):
                 with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
                     f.write(json.dumps(i))
             return id
+
 async def getplaylist(sn):
     async with aiohttp.ClientSession() as session:
         async with session.get(cloudmusicapiurl + "/playlist/track/all?id="+sn+"&limit=30") as resp:
@@ -129,7 +130,10 @@ async def getplaylist(sn):
                     i["album"] = i.pop("al")
                     f.write(json.dumps(i))
 
-            return id
+            nl = []
+            for i in id:
+                nl.append(str(i['id']))
+            return nl
 
 @app.route('/updatesongqueue', methods = ['POST'])
 def updatesongqueue():
@@ -598,6 +602,7 @@ async def getsongid(sn):
                 return False
             if sn.find("list?id=") != -1:
                 # slow
+                sn=sn[sn.find("list?id=") + 8:]
                 return  await getplaylist(sn)
             # reload(search163)
             # slow
