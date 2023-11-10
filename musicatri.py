@@ -806,14 +806,15 @@ async def rankings(ctx):
     await ctx.send(msg)
 async def songchoice(ctx,xuanze):
     while(1):
-        msg=replacetrans("select_song",str(ctx.author.id))
+        await ctx.send(replacetrans("c",str(ctx.author.id)))
+        msg=""
         for x in range(len(xuanze)):
-            msg = msg + str(x) + ".  " + str(api163.getsongartists(xuanze[x])).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(xuanze[x])) 
+            msg = msg + str(x) + ".  " + str(api163.getsongartists(xuanze[x])).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(xuanze[x])) +"\n"
         await ctx.send(msg)
         selection = await atri.wait_for('message', )
         selection=selection.content
         try:
-            return xuanze[int(selection)-1]
+            return xuanze[int(selection)]
         except:
             await ctx.send("?")
 
