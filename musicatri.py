@@ -33,6 +33,7 @@ from mutagen.mp3 import MP3
 from waitress import serve
 import aiohttp
 import subprocess
+from urllib.parse import quote
 
 dirpath = dirname(realpath(__file__)) + "/"
 app = Flask(__name__)
@@ -82,8 +83,8 @@ ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
 cloudmusicapiurl = 'http://127.0.0.1:'+key["NeteaseCloudMusicApiPort"]
 
-requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
-
+loginres=requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
+cookie=quote(loginres.json()['cookie'])
 
 @app.route('/updatesongqueue', methods = ['POST'])
 def updatesongqueue():
@@ -580,7 +581,7 @@ async def dl163ali(id):
         return True
     #/song/url/v1?id=33894312&level=exhigh
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=higher") as resp:
+        async with session.get(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=higher&cookie="+cookie) as resp:
             results=await resp.json()
             if resp.status==401:
                 with open(dirpath + "./songcache/" + id + ".mp3", "wb") as f:

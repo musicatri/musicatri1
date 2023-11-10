@@ -26,7 +26,7 @@ if key["songctladdr"]=="":
     key["songctladdr"]="localhost"
 key["songctladdr"]="http://"+key["songctladdr"]+":"+str(key["serverport"])+"/songctl?id="
 
-key["NeteaseCloudMusicApiPort"]=input("enter an unused port on your system to enable communication with NeteaseCloudMusicApi\n")
+key["NeteaseCloudMusicApiPort"]="3000"
 key["NeteaseCloudMusicUsername"]=input("Enter your netease cloud music cellphone number to enable playing VIP limited songs\n")
 key["NeteaseCloudMusicPassword"]=input("Enter your netease cloud music password\n")
 with codecs.open(dirpath + "./atrikey.json", encoding='utf-8', mode='w') as f:
