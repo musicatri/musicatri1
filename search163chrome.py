@@ -63,13 +63,12 @@ def get_id_and_cache_data(id):
         for n in range(min(len(music_ids), len(music_names), len(music_singers))):
             music_id = music_ids[n].get("href")
             music_id = music_id.split('=')[-1]
-            print(music_id)
             music_name = music_names[n].get("title")
             music_singer = music_singers[n].string
-            print(music_name)
-            print(music_singer)
             if music_singer == None:
                 music_singer=str(music_singers[n].a.string)
+                if music_singer == None:
+                    break
             if not exists(dirpath+"./datacache/"+music_id+".s163dddd") or not exists(dirpath+"./datacache/"+id):
                 with open(dirpath+"./datacache/"+music_id+".s163dddd", encoding='utf-8', mode='w') as f:
                     f.write(str([music_singer,music_name]))
