@@ -10,8 +10,13 @@ with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     key = json.loads(r.read())
     name = key["name"]
     print("主人我的云控制链接是"+key["songctladdr"])
-subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
-cloudmusicapiurl = 'http://127.0.0.1:'+key["NeteaseCloudMusicApiPort"]
+if not key["devmode"]:
+    subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
+    cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
+    print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
+else:
+    print("主人，开发者模式以启用")
+    cloudmusicapiurl = 'http://192.168.50.58:3000'
 cookie=""
 from os.path import exists
 from os import system as cmd
@@ -34,8 +39,6 @@ import yt_dlp
 from discord.ext import commands
 from discord.ext import tasks
 from gtts import gTTS
-import api163
-import get163playlist
 import openai
 import threading
 import json
@@ -85,6 +88,49 @@ ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 
 
+async def getsongdetails(id):
+    if exists(dirpath + "./datacache/" + id):
+        with codecs.open(dirpath + "./datacache/" + id, encoding='utf-8', mode='r') as f:
+            return json.loads(f.read())
+    else:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://music.163.com/api/song/detail/?id="+id+"&ids=%5B"+id+"%5D") as resp:
+                results = await resp.json()
+                results=results["songs"][0]
+                with codecs.open(dirpath + "./datacache/" + id, encoding='utf-8', mode='w') as f:
+                    f.write(json.dumps(results))
+                return results
+async def getsongname(id):
+    a=await getsongdetails(id)
+    return a["name"]
+async def getsongartists(id):
+    art = await getsongdetails(id)
+    art=art["artists"]
+    return artistslistpurifier(art)
+async def searchsong(sn):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(cloudmusicapiurl + "/search?keywords="+sn) as resp:
+            results = await resp.json()
+            if results["result"]['songCount'] == 0:
+                return -1
+            id = tuple(results["result"]["songs"])
+            for i in id:
+                with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
+                    f.write(json.dumps(i))
+            return id
+async def getplaylist(sn):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(cloudmusicapiurl + "/playlist/track/all?id="+sn+"&limit=30") as resp:
+            results = await resp.json()
+            id =results["songs"]
+            for i in id:
+                with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
+                    i["artists"]=i.pop("ar")
+                    i["album"] = i.pop("al")
+                    f.write(json.dumps(i))
+
+            return id
+
 @app.route('/updatesongqueue', methods = ['POST'])
 def updatesongqueue():
     guildid=int(request.json["guildid"])
@@ -119,7 +165,7 @@ async def requestnewsong():
         if id:
             if not await dl163ali(id):
                 return
-            songandartname=str(api163.getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(api163.getsongname(id))
+            songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
             cs[guildid] = songandartname
             file=dirpath + "./songcache/" + id + ".mp3"
             songduration[songandartname]=getmp3duration(file)
@@ -142,7 +188,7 @@ async def requestnewsong():
             a=await dl163ali(id)
             if not a:
                 return "暂时不支持vip歌曲，ご主人様ごめなさい！！"
-            songandartname=str(api163.getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(api163.getsongname(id))
+            songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
             file=dirpath + "./songcache/" + id + ".mp3"
             try:
                 if songandartname in queues[guildid].keys():
@@ -239,38 +285,32 @@ def mutisearch(s,t):
             return True
     return False
 
-def replacetrans(message,userid,*replace):
-    userid=str(userid)
+def replacetrans(message, userid, *replace):
+    userid = str(userid)
     if userid not in langpref:
-        langpref[userid]="zh.json"
+        langpref[userid] = "zh.json"
+        default_message = "You have not set a language, defaulting to Chinese Simplified. You can set a language with " + name[0] + "langset."
+        translation = translations[langpref[userid]][message]
         if replace:
-            if len(replace)>1:
-                chosenmessage=random.choice(translations[langpref[userid]][message])
-                if chosenmessage.find("%a") == -1:
-                    return "You have not set a language, defaulting to Chinese Simplified. You can set a language with "+name[0]+"langset.\n"+translations[langpref[userid]][message].replace("%a",replace[0])
-                else:
-                    return "You have not set a language, defaulting to Chinese Simplified. You can set a language with "+name[0]+"langset.\n"+translations[langpref[userid]][message]
-            return "You have not set a language, defaulting to Chinese Simplified. You can set a language with "+name[0]+"langset.\n"+translations[langpref[userid]][message].replace("%a",replace[0])
-        else:
-            return "You have not set a language, defaulting to Chinese Simplified. You can set a language with "+name[0]+"langset.\n"+translations[langpref[userid]][message]
+            if len(replace) > 1:
+                chosen_message = random.choice(translation)
+                return default_message + "\n" + chosen_message.replace("%a", replace[0]) if "%a" in chosen_message else default_message + "\n" + chosen_message
+            return default_message + "\n" + translation.replace("%a", replace[0]) if "%a" in translation else default_message + "\n" + translation
+        return default_message + "\n" + translation
 
+    translation = translations[langpref[userid]][message]
     if replace:
-        if len(replace)>1:
-            chosenmessage=random.choice(translations[langpref[userid]][message])
-            if chosenmessage.find("%a") == -1:
-                return translations[langpref[userid]][message].replace("%a",replace[0])
-            else:
-                return translations[langpref[userid]][message]
-        return translations[langpref[userid]][message].replace("%a",replace[0])
-    else:
-        return translations[langpref[userid]][message]
+        if len(replace) > 1:
+            chosen_message = random.choice(translation)
+            return chosen_message.replace("%a", replace[0]) if "%a" in chosen_message else chosen_message
+        return translation.replace("%a", replace[0]) if "%a" in translation else translation
+    return translation
+
 
 def testbyn(sn):
     sl = ["youtube.com", "youtu.be", "bilibili.com", "nicovideo.jp", "nico.ms", "b23.tv"]
-    for i in sl:
-        if sn.find(i) != -1:
-            return True
-    return False
+    return any(sub in sn for sub in sl)
+
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, ):
@@ -372,7 +412,7 @@ async def addtoqueue163(ctx, id):
                     await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
                     continue
                 else:
-                    songname=str(api163.getsongartists(i)).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(i))
+                    songname=str(await getsongartists(i)).replace("[", "").replace("]", "").replace("'","") + "——" + str(await getsongname(i))
                     file=dirpath + "./songcache/" + i + ".mp3"
                     try:
                         songduration[songname]=getmp3duration(file)
@@ -399,7 +439,7 @@ async def addtoqueue163(ctx, id):
         if not a:
             await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
             return
-        songname=str(api163.getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(api163.getsongname(id))
+        songname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
         file=dirpath + "./songcache/" + id + ".mp3"
         songduration[songname]=getmp3duration(file)
         try:
@@ -542,8 +582,9 @@ async def on_ready():
     print("主人我目前加入了"+str(len(atri.guilds))+"个服务器哦")
     writeplays.start()
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
-    loginres=requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
-    cookie=quote(loginres.json()['cookie'])
+    if not key["devmode"]:
+        loginres=requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
+        cookie=quote(loginres.json()['cookie'])
 
 async def getsongid(sn):
     b = sn.find("song?id=")
@@ -557,17 +598,13 @@ async def getsongid(sn):
                 return False
             if sn.find("list?id=") != -1:
                 # slow
-                r = await asyncio.get_event_loop().run_in_executor(None, get163playlist.getlistids, sn)
-                return r
+                return  await getplaylist(sn)
             # reload(search163)
             # slow
             #id = await asyncio.get_event_loop().run_in_executor(None, search163.get_id_and_cache_data, sn)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(cloudmusicapiurl+"/search?keywords="+sn) as resp:
-                    results = await resp.json()
-                    if results["result"]['songCount']==0:
-                        return -1
-                    id = tuple(results["result"]["songs"])
+            # searcg 1
+            id= await searchsong(sn)
+
     else:
         n = sn[b + 8:]
         if n.find("&") == -1:
@@ -818,7 +855,7 @@ async def rankings(ctx):
     msg = "!全dc亚托莉放的最多的歌曲前十!\n"
     for id in sorted(plays, key=plays.get, reverse=True)[:10]:
         if type(id)==type(1):
-            msg = msg + str(ct) + ".  " + str(api163.getsongartists(id)).replace("[", "").replace("]", "").replace("'","") + "——" + str(api163.getsongname(id)) + " || " + str(plays[id]) + "次播放。\n"
+            msg = msg + str(ct) + ".  " + str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'","") + "——" + str(await getsongname(id)) + " || " + str(plays[id]) + "次播放。\n"
         else:
             msg = msg + str(ct) + ".  " + id + " || " + str(plays[id]) + "次播放。\n"
         ct = ct + 1
@@ -828,7 +865,7 @@ def artistslistpurifier(j):
     nl=[]
     for i in j:
         nl.append(i['name'])
-    return nl
+    return "，".join(nl)
 async def songchoice(ctx,xuanze):
     print(xuanze)
     while(1):
@@ -945,7 +982,7 @@ async def play163(ctx, id):
     if not await dl163ali(id):  # 调用await dl163ali，如果歌曲可以下载会下载歌曲，不可以的话会返回 False 所以下面不需要调用
         await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
         return
-    songname=str(api163.getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(api163.getsongname(id))
+    songname=str(await getsongartists(id)) + "——" + str(await getsongname(id))
     cs[ctx.guild.id] = songname
     file=dirpath + "./songcache/" + id + ".mp3"
     songduration[songname]=getmp3duration(file)

@@ -1,7 +1,6 @@
 """
 2021/9/20
 """
-from os.path import exists
 from os import remove
 import codecs
 import json
@@ -23,7 +22,7 @@ def getsongdetail(id):
         return False
     else:
         with codecs.open(dirpath+"./datacache/"+id, encoding='utf-8', mode='w') as f:
-            d=str(requests.get("http://music.163.com/api/song/detail/?id="+id+"&ids=%5B"+id+"%5D").content.decode("utf-8"))
+            d=str(requests.get().content.decode("utf-8"))
             f.write(d)
             return json.loads(d)
 
