@@ -95,7 +95,7 @@ async def getsongdetails(id):
     else:
         async with aiohttp.ClientSession() as session:
             async with session.get("http://music.163.com/api/song/detail/?id="+id+"&ids=%5B"+id+"%5D") as resp:
-                results = await resp.json()
+                results = await resp.json(content_type=None)
                 results=results["songs"][0]
                 with codecs.open(dirpath + "./datacache/" + id, encoding='utf-8', mode='w') as f:
                     f.write(json.dumps(results))
