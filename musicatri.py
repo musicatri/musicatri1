@@ -815,7 +815,7 @@ async def songchoice(ctx,xuanze):
         selection = await atri.wait_for('message', )
         selection=selection.content
         try:
-            return xuanze[int(selection)+1]
+            return xuanze[int(selection)-1]
         except:
             await ctx.send("?")
 

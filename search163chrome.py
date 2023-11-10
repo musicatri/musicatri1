@@ -9,6 +9,7 @@ import bs4
 from selenium import webdriver
 from time import sleep
 import traceback
+import pickle
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.options import Options
 dirpath = dirname(realpath(__file__))+"/"
@@ -112,8 +113,8 @@ def login163():
     url = "http://music.163.com/"
     browser.get(url=url)
     input("登录完成请按回车")
-    browser.quit()
-#
+    pickle.dump(browser.get_cookies(), open(dirpath+"cookies.pkl", "wb"))
+
 #
 if __name__ == '__main__':
     login163()
