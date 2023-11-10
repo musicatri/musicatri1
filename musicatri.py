@@ -32,7 +32,8 @@ import json
 from mutagen.mp3 import MP3
 from waitress import serve
 import aiohttp
-cloudmusicapiurl = 'http://127.0.0.1:3000'
+import subprocess
+
 dirpath = dirname(realpath(__file__)) + "/"
 app = Flask(__name__)
 print("主人，我的工作目录是 "+dirpath+" 喵~")
@@ -77,6 +78,13 @@ if key["ytdlproxy"]:
     ytdl_format_options['proxy']=key['ytdlproxy']
 print("我的名字是" + str(name) + "。谢谢主人给我起这么好听的名字！")
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
+
+subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
+cloudmusicapiurl = 'http://127.0.0.1:'+key["NeteaseCloudMusicApiPort"]
+
+requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
+
+
 @app.route('/updatesongqueue', methods = ['POST'])
 def updatesongqueue():
     guildid=int(request.json["guildid"])
@@ -570,13 +578,20 @@ async def getsongid(sn):
 async def dl163ali(id):
     if exists(dirpath + "./songcache/" + id + ".mp3"):
         return True
-        # print("使用缓存的音频文件")
-    else:
-        with open(dirpath + "./songcache/" + id + ".mp3", "wb") as f:
-            a = await asyncio.get_event_loop().run_in_executor(None, requests.get,key["fcaddress"] + "?" + id.replace(" ", ""))
-            f.write(a.content)
-            return True
-
+    #/song/url/v1?id=33894312&level=exhigh
+    async with aiohttp.ClientSession() as session:
+        async with session.get(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=higher") as resp:
+            results=await resp.json()
+            if resp.status==401:
+                with open(dirpath + "./songcache/" + id + ".mp3", "wb") as f:
+                    a = await asyncio.get_event_loop().run_in_executor(None, requests.get,key["fcaddress"] + "?" + id.replace(" ", ""))
+                    f.write(a.content)
+                    return True
+            else:
+                with open(dirpath + "./songcache/" + id + ".mp3", "wb") as f:
+                    a = await asyncio.get_event_loop().run_in_executor(None, requests.get,results["data"][0]["url"])
+                    f.write(a.content)
+                    return True
 @atri.command(aliases=["封"])
 async def ban(ctx, id, reason=" "):
     if str(ctx.message.author.id) == "834651231871434752":
