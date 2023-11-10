@@ -60,7 +60,7 @@ def get_id_and_cache_data(id):
         music_names = soup.select("div[class='td w0'] a b")  # 音乐名字
         music_singers = soup.select("div[class='td w1']")  # 歌手名
         searchresults=[]
-        for n in range(len(music_names)):
+        for n in range(min(len(music_ids), len(music_names), len(music_singers))):
             music_id = music_ids[n].get("href")
             music_id = music_id.split('=')[-1]
             print(music_id)
