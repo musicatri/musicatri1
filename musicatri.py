@@ -82,7 +82,7 @@ ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
 cloudmusicapiurl = 'http://127.0.0.1:'+key["NeteaseCloudMusicApiPort"]
-
+time.sleep(1)
 loginres=requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
 cookie=quote(loginres.json()['cookie'])
 
