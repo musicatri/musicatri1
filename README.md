@@ -16,6 +16,6 @@ Note: setup.sh will only automatically install ffmpeg and chromium on systems th
 <h3>TODO:</h3><br>
 add language selection and English support☑️<br>
 add support for searching youtube<br>
-create a new chrome instance for each active guild for song searching, or create a queue for song search requests<br>
+c̶r̶e̶a̶t̶e̶ ̶a̶ ̶n̶e̶w̶ ̶c̶h̶r̶o̶m̶e̶ ̶i̶n̶s̶t̶a̶n̶c̶e̶ ̶f̶o̶r̶ ̶e̶a̶c̶h̶ ̶a̶c̶t̶i̶v̶e̶ ̶g̶u̶i̶l̶d̶ ̶f̶o̶r̶ ̶s̶o̶n̶g̶ ̶s̶e̶a̶r̶c̶h̶i̶n̶g̶,̶ ̶o̶r̶ ̶c̶r̶e̶a̶t̶e̶ ̶a̶ ̶q̶u̶e̶u̶e̶ ̶f̶o̶r̶ ̶s̶o̶n̶g̶ ̶s̶e̶a̶r̶c̶h̶ ̶r̶e̶q̶u̶e̶s̶t̶s̶☑️ Fixed with using NeteaseCloudMusicApi<br>
 use a list instead of a dictonary for queue list<br>
 use something other than a pull request every 2 second to update song information for the website<br>
