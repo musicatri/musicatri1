@@ -1,6 +1,6 @@
 python -m venv .\pyenv
 .\pyenv\Scripts\Activate
-pip install gtts discord requests asyncio yt-dlp
+pip install gtts discord requests asyncio yt-dlp aiofile
 pip install pynacl openai Flask Flask[async] waitress
 echo [] > waifulist.txt
 echo {} > plays.json

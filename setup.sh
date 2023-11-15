@@ -1,7 +1,7 @@
-sudo apt install python3-pip ffmpeg
+sudo apt install python3 python3-pip ffmpeg nodejs npm
 python3 -m venv ./pyenv
 source ./pyenv/bin/activate
-pip install gtts discord requests asyncio yt_dlp pynacl openai flask flask[async] waitress
+pip install gtts discord requests asyncio yt_dlp pynacl openai flask flask[async] waitress aiofile
 echo "[]" > waifulist.txt
 echo "{}" > plays.json
 echo "{}" > haogan.json
