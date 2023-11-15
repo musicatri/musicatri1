@@ -662,7 +662,7 @@ async def dl163ali(id):
     #/song/url/v1?id=33894312&level=exhigh
     async with aiohttp.ClientSession() as session:
         async with session.get(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=exhigh&cookie="+cookie) as resp:
-            print(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=exhigh&cookie="+cookie)
+            #print(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=exhigh&cookie="+cookie)
             results=await resp.json()
             async with aiohttp.ClientSession() as session:
                 async with session.get(results["data"][0]["url"]) as resp:
