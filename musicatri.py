@@ -4,6 +4,10 @@ from os.path import dirname
 from os.path import realpath
 import codecs
 import json
+import requests
+import time
+from os.path import exists
+from urllib.parse import quote
 dirpath = dirname(realpath(__file__)) + "/"
 with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     # aaa=r.read().encode().decode('utf-8-sig') win7 workaround
@@ -17,8 +21,20 @@ if not key["devmode"]:
 else:
     print("主人，开发者模式以启用")
     cloudmusicapiurl = 'http://192.168.50.58:3000'
-cookie=""
-from os.path import exists
+
+if not exists(dirpath + "cookie.txt"):
+    time.sleep(10)
+    loginres = requests.get(
+        cloudmusicapiurl + "/login/cellphone?phone=" + key["NeteaseCloudMusicUsername"] + "&password=" + key[
+            "NeteaseCloudMusicPassword"])
+    cookie=quote(loginres.json()['cookie'])
+    with codecs.open(dirpath + "cookie.txt", encoding='utf-8', mode='w') as f:
+        f.write(cookie)
+    print("主人，我已经登录网易云了并且保存了cookie喵~，cookie是" + quote(
+        loginres.json()['cookie']))
+else:
+    with codecs.open("cookie.txt", encoding='utf-8', mode='r') as r:
+        cookie = r.read()
 from os import system as cmd
 from flask import Flask
 from flask import request
@@ -29,12 +45,11 @@ import asyncio
 import os
 import platform
 import random
-import time
 import traceback
+import aiofiles
 from datetime import date
 from functools import partial
 import discord
-import requests
 import yt_dlp
 from discord.ext import commands
 from discord.ext import tasks
@@ -45,7 +60,6 @@ import json
 from mutagen.mp3 import MP3
 from waitress import serve
 import aiohttp
-from urllib.parse import quote
 app = Flask(__name__)
 print("主人，我的工作目录是 "+dirpath+" 喵~")
 #http://musicatrictl.akutan445.com:4949/songctl?id=
@@ -601,9 +615,6 @@ async def on_ready():
     print("主人我目前加入了"+str(len(atri.guilds))+"个服务器哦")
     writeplays.start()
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
-    if not key["devmode"]:
-        loginres=requests.get(cloudmusicapiurl+"/login/cellphone?phone="+key["NeteaseCloudMusicUsername"]+"&password="+key["NeteaseCloudMusicPassword"])
-        cookie=quote(loginres.json()['cookie'])
 
 async def getsongid(sn):
     b = sn.find("song?id=")
@@ -650,18 +661,16 @@ async def dl163ali(id):
         return True
     #/song/url/v1?id=33894312&level=exhigh
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=higher&cookie="+cookie) as resp:
+        async with session.get(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=exhigh&cookie="+cookie) as resp:
+            print(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=exhigh&cookie="+cookie)
             results=await resp.json()
-            if resp.status==401:
-                with open(dirpath + "./songcache/" + id + ".mp3", "wb") as f:
-                    a = await asyncio.get_event_loop().run_in_executor(None, requests.get,key["fcaddress"] + "?" + id.replace(" ", ""))
-                    f.write(a.content)
-                    return True
-            else:
-                with open(dirpath + "./songcache/" + id + ".mp3", "wb") as f:
-                    a = await asyncio.get_event_loop().run_in_executor(None, requests.get,results["data"][0]["url"])
-                    f.write(a.content)
-                    return True
+            async with aiohttp.ClientSession() as session:
+                async with session.get(results["data"][0]["url"]) as resp:
+                    if resp.status == 200:
+                        f = await aiofiles.open(dirpath + "./songcache/" + id + ".mp3", "wb")
+                        await f.write(await resp.read())
+                        await f.close()
+                        return True
 @atri.command(aliases=["封"])
 async def ban(ctx, id, reason=" "):
     if str(ctx.message.author.id) == "834651231871434752":
@@ -1244,6 +1253,7 @@ async def writeplays():
     print("主人，房间已经清扫的干干净净了喵~")
 
 def startatri():
+
     atri.run(key["key"])
 
 if __name__ == '__main__':
