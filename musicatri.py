@@ -661,7 +661,7 @@ async def dl163ali(id):
         return True
     #/song/url/v1?id=33894312&level=exhigh
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=exhigh&cookie="+cookie) as resp:
+        async with session.get(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=higher&cookie="+cookie) as resp:
             #print(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=exhigh&cookie="+cookie)
             results=await resp.json()
             async with aiohttp.ClientSession() as session:
@@ -695,14 +695,6 @@ async def langset(ctx, *lang):
             langpref[str(ctx.author.id)]=lang[0].replace(".json","")+".json"
         else:
             await ctx.send("avaliable languages:"+str(os.listdir(dirpath+"langfiles")))
-
-
-@atri.command()
-async def log(ctx):
-    await ctx.send("请过目~")
-    with open("/server/mc/logs/latest.log","r") as f:
-        c=f.read()
-    await ctx.send(c[-1999:])
 
 @atri.command()
 async def spelling(ctx):
