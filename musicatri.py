@@ -357,21 +357,41 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return self.__getattribute__(item)
     @classmethod
     async def create_source(cls, search: str, ):
+        bilibili=False
+        if mutisearch(search, ["b23.tv","bilibili.com","bilibili.tv"]):
+            bilibili=True
+        niconico=False
+        if mutisearch(search, ["nicovideo.jp", "nico.ms"]):
+            niconico=True
         loop = asyncio.get_event_loop()
         to_run = partial(ytdl.extract_info, url=search)
         data = await loop.run_in_executor(None, to_run)
+        if key["devmode"]:
+            with open(dirpath + "./ytdltemp/" + data['id'] + ".info.json", "w") as f:
+                f.write(json.dumps(data, sort_keys=True, indent=4))
+
         if 'entries' in data:
             lista=[]
             for d in data['entries']:
                 source = ytdl.prepare_filename(d)
-                d["url"]=d["webpage_url"]
+                if bilibili:
+                    d["url"] = "https://www.bilibili.com/video/"+d["webpage_url_basename"]
+                if niconico:
+                    d["url"] = "https://www.nicovideo.jp/watch/" + d["webpage_url_basename"]
+                else:
+                    d["url"] = d["webpage_url"]
                 lista.append([discord.FFmpegPCMAudio(source),d])
             return lista
 
         else:
 
             source = ytdl.prepare_filename(data)
-            data["url"]=data["webpage_url"]
+            if bilibili:
+                data["url"] = "https://www.bilibili.com/video/" + data["webpage_url_basename"]
+            if niconico:
+                data["url"] = "https://www.nicovideo.jp/watch/" + data["webpage_url_basename"]
+            else:
+                data["url"]=data["webpage_url"]
             return (discord.FFmpegPCMAudio(source),data)
 
 async def getyt(url):
@@ -379,6 +399,7 @@ async def getyt(url):
     return a
 
 def add1play(id):
+    print("add1play",id)
     try:
         plays[id] = plays[id] + 1
     except:
