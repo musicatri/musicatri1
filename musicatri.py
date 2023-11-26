@@ -868,8 +868,8 @@ async def marry(ctx):
 @atri.command(aliases=["排行榜"])
 async def rankings(ctx):
     ct = 1
-    msg = "!全dc亚托莉放的最多的歌曲前十!\n"
-    for id in sorted(plays, key=plays.get, reverse=True)[:10]:
+    msg = "!全dc亚托莉放的最多的歌曲前三十!\n"
+    for id in sorted(plays, key=plays.get, reverse=True)[:30]:
         try:
             int(id)
             msg = msg + str(ct) + ".  " +str(await getsongartists(id)) + "——" + str(await getsongname(id))+ " || " + str(plays[id]) + "次播放。\n"
