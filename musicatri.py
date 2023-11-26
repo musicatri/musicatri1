@@ -186,7 +186,6 @@ async def requestnewsong():
     a=request.json["songname"]
     guild=atri.get_guild(int(guildid))
     players[guildid] = discord.utils.get(atri.voice_clients, guild=guild)
-    print(a)
     id = await getsongid(a)
     if type(id) == type(()):
         #目前还没有实现网页歌曲选择
@@ -357,12 +356,14 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return self.__getattribute__(item)
     @classmethod
     async def create_source(cls, search: str, ):
-        bilibili=False
-        if mutisearch(search, ["b23.tv","bilibili.com","bilibili.tv"]):
-            bilibili=True
-        niconico=False
-        if mutisearch(search, ["nicovideo.jp", "nico.ms"]):
-            niconico=True
+
+        if mutisearch(search, ["b23.tv","bili"]):
+            site="bili"
+        elif mutisearch(search, ["nicovideo.jp", "nico.ms"]):
+            site="nico"
+        else:
+            site="yt"
+
         loop = asyncio.get_event_loop()
         to_run = partial(ytdl.extract_info, url=search)
         data = await loop.run_in_executor(None, to_run)
@@ -374,9 +375,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
             lista=[]
             for d in data['entries']:
                 source = ytdl.prepare_filename(d)
-                if bilibili:
+                if site=="bili":
                     d["url"] = "https://www.bilibili.com/video/"+d["webpage_url_basename"]
-                if niconico:
+                elif site=="nico":
                     d["url"] = "https://www.nicovideo.jp/watch/" + d["webpage_url_basename"]
                 else:
                     d["url"] = d["webpage_url"]
@@ -386,9 +387,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
         else:
 
             source = ytdl.prepare_filename(data)
-            if bilibili:
+            if site=="bili":
                 data["url"] = "https://www.bilibili.com/video/" + data["webpage_url_basename"]
-            if niconico:
+            elif site=="nico":
                 data["url"] = "https://www.nicovideo.jp/watch/" + data["webpage_url_basename"]
             else:
                 data["url"]=data["webpage_url"]
@@ -399,7 +400,6 @@ async def getyt(url):
     return a
 
 def add1play(id):
-    print("add1play",id)
     try:
         plays[id] = plays[id] + 1
     except:
@@ -646,7 +646,6 @@ async def getsongid(sn):
 
                 # slow
                 sn = sn[listtextl + 8:]
-                print(sn)
                 return await getalbum(sn)
             listtextl = sn.find("list?id=")
             if listtextl != -1:
@@ -702,7 +701,6 @@ async def unban(ctx, id):
 @atri.command()
 async def langset(ctx, *lang):
     global langpref
-    print(langpref)
     if not lang:
         await ctx.send("avaliable languages:"+str(os.listdir(dirpath+"langfiles")))
     else:
@@ -889,7 +887,6 @@ def artistslistpurifier(j):
         nl.append(i['name'])
     return "，".join(nl)
 async def songchoice(ctx,xuanze):
-    print(xuanze)
     while(1):
         await ctx.send(replacetrans("select_song",str(ctx.author.id)))
         msg=""
@@ -915,7 +912,6 @@ async def play(ctx, *a):
                     await ctx.message.author.voice.channel.connect()
                     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
                 a =" ".join(a)
-                print(a)
                 id = await getsongid(a)
                 if id == -1:
                     return
@@ -998,7 +994,6 @@ async def play(ctx, *a):
                 await ctx.send( replacetrans("error_traceback",str(ctx.author.id)), file=discord.File(file, "err.txt"))
         else:
             await ctx.send("播放失败")
-    print(cs)
 
 async def play163(ctx, id):
     if not await dl163ali(id):  # 调用await dl163ali，如果歌曲可以下载会下载歌曲，不可以的话会返回 False 所以下面不需要调用
