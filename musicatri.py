@@ -870,7 +870,7 @@ async def marry(ctx):
 @atri.command(aliases=["排行榜"])
 async def rankings(ctx):
     songtable = PrettyTable()
-    songtable.field_names = ["Ranking", "Song Name/Artist"]
+    songtable.field_names = ["排名","播放次数", "歌手/歌曲名"]
     songtable.align = 'l'
     songtable.set_style(PLAIN_COLUMNS)
     ct = 1
@@ -878,12 +878,12 @@ async def rankings(ctx):
     for id in sorted(plays, key=plays.get, reverse=True)[:30]:
         try:
             int(id)
-            songtable.add_row([ct, str(await getsongartists(id)) + "——" + str(await getsongname(id))])
+            songtable.add_row([ct,  plays[id],str(await getsongartists(id)) + "——" + str(await getsongname(id))])
             #msg = msg + str(ct) + ".  " +str(await getsongartists(id)) + "——" + str(await getsongname(id))+ " || " + str(plays[id]) + "次播放。\n"
             ct = ct + 1
         except:
             #msg = msg + str(ct) + ".  " +id+ " || " + str(plays[id]) + "次播放。\n"
-            songtable.add_row([ct, id])
+            songtable.add_row([ct, plays[id], id ])
             ct = ct + 1
 
 
