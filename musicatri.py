@@ -357,27 +357,21 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return self.__getattribute__(item)
     @classmethod
     async def create_source(cls, search: str, ):
-        bilibili=False
-        if mutisearch(search, ["b23.tv","bilibili.com","bilibili.tv"]):
-            bilibili=True
         loop = asyncio.get_event_loop()
-        to_run = partial(ytdl.extract_info, url=search,)
+        to_run = partial(ytdl.extract_info, url=search)
         data = await loop.run_in_executor(None, to_run)
         if 'entries' in data:
-            # take first item from a playlist
             lista=[]
-            #returns a tuple if retunring only 1 song, so you know if a playlist is being downloaded
-            #allow max of 100 songs
             for d in data['entries']:
                 source = ytdl.prepare_filename(d)
-                d["url"]=search
+                d["url"]=d["webpage_url"]
                 lista.append([discord.FFmpegPCMAudio(source),d])
             return lista
 
         else:
 
             source = ytdl.prepare_filename(data)
-            data["url"]=search
+            data["url"]=data["webpage_url"]
             return (discord.FFmpegPCMAudio(source),data)
 
 async def getyt(url):
@@ -774,72 +768,42 @@ async def spelling(ctx):
 
 @atri.command(aliases=["すき", "最喜欢了", "喜欢", "爱"])
 async def suki(ctx, *v):
+    user_id = str(ctx.author.id)
 
-    # print(userdata)
-    if not v:
-        await ctx.send(replacetrans("suki_missing_args",ctx.author.id))
+    def reset_daily_limits():
+        userdata[user_id]["dailylimits"] = {"pat": 0, "suki": 0, "727": 0}
+
+    def update_haogandu(value):
+        userdata[user_id]["haogandu"] += value
+
+    async def send_message(key, value_change):
+        await ctx.send(replacetrans(key, user_id))
+        update_haogandu(value_change)
+
+    if not v or not v[0].isdigit():
+        await ctx.send(replacetrans("suki_missing_args", user_id))
         return
-    try:
-        int(v[0])
-    except:
-        await ctx.send(replacetrans("suki_missing_args",ctx.author.id))
-    try:
-        if userdata[str(ctx.author.id)]["dailylimittime"] != str(date.today()):
-            # print("resetting limits")
-            userdata[str(ctx.author.id)]["dailylimits"]["pat"] = 0
-            userdata[str(ctx.author.id)]["dailylimits"]["suki"] = 0
-            userdata[str(ctx.author.id)]["dailylimits"]["727"] = 0
-        if not userdata[str(ctx.author.id)]["haogandu"] < -20:
-            if userdata[str(ctx.author.id)]["dailylimits"]["suki"] < 10:
-                if int(v[0]) > 5:
-                    await ctx.send(replacetrans("suki_love",ctx.author.id))
-                    userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] + 1
-                else:
-                    if not userdata[str(ctx.author.id)]["haogandu"] > 500:
-                        await ctx.send(replacetrans("suki_kirai",ctx.author.id))
-                        userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 5
-                    else:
-                        await ctx.send("？？？")
-                        await asyncio.sleep(5)
-                        await ctx.send(replacetrans("suki_kirai_cry1",ctx.author.id))
-                        await ctx.send(replacetrans("suki_kirai_cry2",ctx.author.id))
-                        await ctx.send(replacetrans("suki_kirai",ctx.author.id))
-                        userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 400
+
+    user_data = userdata.get(user_id, {})
+    if user_data.get("dailylimittime") != str(date.today()):
+        reset_daily_limits()
+
+    haogandu = user_data.get("haogandu", 0)
+    daily_limit = user_data.get("dailylimits", {}).get("suki", 0)
+
+    if haogandu >= -20:
+        if daily_limit < 10:
+            if int(v[0]) > 5:
+                await send_message("suki_love", 1)
             else:
-                if userdata[str(ctx.author.id)]["haogandu"] > 500:
-                    if int(v[0]) > 5:
-                        await ctx.send(replacetrans("suki_very_suki",ctx.author.id))
-                        userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] + 10
-                    else:
-                        await ctx.send("？？？")
-                        await asyncio.sleep(5)
-                        await ctx.send(replacetrans("suki_kirai_cry1",ctx.author.id))
-                        await ctx.send(replacetrans("suki_kirai_cry2",ctx.author.id))
-                        await ctx.send(replacetrans("suki_kirai",ctx.author.id))
-                        userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 400
-                else:
-                    await ctx.send(replacetrans("suki_atricon",ctx.author.id))
-                    userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 10
+                await send_message("suki_kirai", -5 if haogandu <= 500 else -400)
         else:
-            await ctx.send(replacetrans("suki_report_police",ctx.author.id))
-            userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 20
-        userdata[str(ctx.author.id)]["dailylimits"]["suki"] = userdata[str(ctx.author.id)]["dailylimits"]["suki"] + 1
-        userdata[str(ctx.author.id)]["dailylimittime"] = str(date.today())
-    except:
-        # print(traceback.format_exc())
-        userdata[str(ctx.author.id)] = {}
-        userdata[str(ctx.author.id)]["dailylimits"] = {}
-        userdata[str(ctx.author.id)]["dailylimits"]["pat"] = 0
-        userdata[str(ctx.author.id)]["dailylimittime"] = str(date.today())
-        userdata[str(ctx.author.id)]["dailylimits"]["suki"] = 1
-        userdata[str(ctx.author.id)]["dailylimits"]["727"] = 0
-        userdata[str(ctx.author.id)]["haogandu"] = random.randint(0, 5)
-        if int(v[0]) > 5:
-            await ctx.send(replacetrans("suki_love",ctx.author.id))
-            userdata[str(ctx.author.id)]["haogandu"] = 1
-        else:
-            await ctx.send(replacetrans("suki_kirai",ctx.author.id))
-            userdata[str(ctx.author.id)]["haogandu"] = -5
+            await send_message("suki_atricon", -10 if haogandu <= 500 else 10)
+    else:
+        await send_message("suki_report_police", -20)
+
+    userdata[user_id]["dailylimits"]["suki"] = daily_limit + 1
+
 
 @atri.command(aliases=["摸头"])
 async def pat(ctx):
@@ -887,11 +851,15 @@ async def rankings(ctx):
     ct = 1
     msg = "!全dc亚托莉放的最多的歌曲前十!\n"
     for id in sorted(plays, key=plays.get, reverse=True)[:10]:
-        if type(id)==type(1):
-            msg = msg + str(ct) + ".  " + str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'","") + "——" + str(await getsongname(id)) + " || " + str(plays[id]) + "次播放。\n"
-        else:
-            msg = msg + str(ct) + ".  " + id + " || " + str(plays[id]) + "次播放。\n"
-        ct = ct + 1
+        try:
+            int(id)
+            msg = msg + str(ct) + ".  " +str(await getsongartists(id)) + "——" + str(await getsongname(id))+ " || " + str(plays[id]) + "次播放。\n"
+            ct = ct + 1
+        except:
+            msg = msg + str(ct) + ".  " +id+ " || " + str(plays[id]) + "次播放。\n"
+            ct = ct + 1
+
+
 
     await ctx.send(msg)
 def artistslistpurifier(j):
@@ -1219,7 +1187,7 @@ async def fix(ctx):
     await user.send("快过来修我！")
     await ctx.send(replacetrans("developer_notified",ctx.author.id))
 
-@tasks.loop(seconds=11451 if not key["devmode"] else 120  )
+@tasks.loop(seconds=11451 if not key["devmode"] else 15  )
 async def writeplays():
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
     await asyncio.sleep(5)
@@ -1235,14 +1203,14 @@ async def writeplays():
     with codecs.open(dirpath + "langpref.json", encoding="utf-8", mode="w") as f:
         f.write(json.dumps(langpref))
     print("数据保存完毕，大家的信息我已经完美的记录下来的喵~")
-    print("主人我正在打扫房间~")
-    # for f in os.listdir(dirpath+"ytdltemp"):
-    #     os.remove(os.path.join(dirpath+"ytdltemp", f))
-    # for filename in os.listdir(dirpath+"songcache"):
-    #     if os.stat(filename).st_size==0:
-    #         os.remove(filename)
-    #1
-    print("主人，房间已经清扫的干干净净了喵~")
+    # print("主人我正在打扫房间~")
+    # # for f in os.listdir(dirpath+"ytdltemp"):
+    # #     os.remove(os.path.join(dirpath+"ytdltemp", f))
+    # # for filename in os.listdir(dirpath+"songcache"):
+    # #     if os.stat(filename).st_size==0:
+    # #         os.remove(filename)
+    # #1
+    # print("主人，房间已经清扫的干干净净了喵~")
 
 def startatri():
 
