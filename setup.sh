@@ -9,7 +9,7 @@ sudo apt-get update
 sudo apt-get install nodejs  -y
 python3 -m venv ./pyenv
 source ./pyenv/bin/activate
-pip install gtts discord requests asyncio yt_dlp pynacl openai flask flask[async] waitress aiofiles
+pip install gtts discord requests asyncio yt_dlp pynacl openai flask flask[async] waitress aiofiles prettytable
 echo "[]" > waifulist.txt
 echo "{}" > plays.json
 echo "{}" > haogan.json

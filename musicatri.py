@@ -36,6 +36,8 @@ else:
     with codecs.open("cookie.txt", encoding='utf-8', mode='r') as r:
         cookie = r.read()
 from os import system as cmd
+from prettytable import PrettyTable
+from prettytable import PLAIN_COLUMNS
 from flask import Flask
 from flask import request
 from flask import send_file
@@ -867,20 +869,26 @@ async def marry(ctx):
 
 @atri.command(aliases=["排行榜"])
 async def rankings(ctx):
+    songtable = PrettyTable()
+    songtable.field_names = ["Ranking", "Song Name/Artist"]
+    songtable.align = 'l'
+    songtable.set_style(PLAIN_COLUMNS)
     ct = 1
-    msg = "!全dc亚托莉放的最多的歌曲前三十!\n"
+    msg = "```!全dc亚托莉放的最多的歌曲前三十!\n"
     for id in sorted(plays, key=plays.get, reverse=True)[:30]:
         try:
             int(id)
-            msg = msg + str(ct) + ".  " +str(await getsongartists(id)) + "——" + str(await getsongname(id))+ " || " + str(plays[id]) + "次播放。\n"
+            songtable.add_row([ct, str(await getsongartists(id)) + "——" + str(await getsongname(id))])
+            #msg = msg + str(ct) + ".  " +str(await getsongartists(id)) + "——" + str(await getsongname(id))+ " || " + str(plays[id]) + "次播放。\n"
             ct = ct + 1
         except:
-            msg = msg + str(ct) + ".  " +id+ " || " + str(plays[id]) + "次播放。\n"
+            #msg = msg + str(ct) + ".  " +id+ " || " + str(plays[id]) + "次播放。\n"
+            songtable.add_row([ct, id])
             ct = ct + 1
 
 
 
-    await ctx.send(msg)
+    await ctx.send(msg+str(songtable)+"```")
 def artistslistpurifier(j):
     nl=[]
     for i in j:
