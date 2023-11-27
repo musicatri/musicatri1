@@ -65,5 +65,6 @@
     "atri_saving_data_finished": "データが保存されました！皆さんの情報を完璧に記録しましたにゃ〜",
     "atri_cleaning": "ご主人様、お部屋を掃除中にゃ〜",
     "atri_cleaning_finished": "お部屋がピカピカになりましたよ、ご主人様、にゃ〜",
-    "select_song": "曲を選んでください（曲の前の番号を送信すればいい）"
+    "select_song": "曲を選んでください（曲の前の番号を送信すればいい,キャンセルするには「c」と返信して）",
+    "select_song_cancel": "キャンセルしました"
   }

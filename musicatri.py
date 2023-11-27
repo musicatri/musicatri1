@@ -454,6 +454,9 @@ async def addtoqueueyt(ctx, song):
         await ctx.send(replacetrans("added_to_playlist",ctx.author.id, song[1]["title"]))
 
 async def addtoqueue163(ctx, id):
+    if id==-1:
+        #canceled
+        return
     if type(id) == type([]):
         adding[ctx.guild.id] = True
         for i in id:
@@ -895,19 +898,23 @@ def artistslistpurifier(j):
         nl.append(i['name'])
     return "，".join(nl)
 async def songchoice(ctx,xuanze):
-    while(1):
-        await ctx.send(replacetrans("select_song",str(ctx.author.id)))
-        msg=""
-        for x in range(len(xuanze)):
-            cr=xuanze[x]
-            msg = msg + str(x) + ".  " + str(artistslistpurifier(cr['artists'])) + "——" + cr["name"] +"\n"
-        await ctx.send(msg)
-        selection = await atri.wait_for('message', )
-        selection=selection.content
-        try:
-            return str(xuanze[int(selection)-1]["id"])
-        except:
-            await ctx.send("?")
+    def check(m):
+        return m.channel == ctx.channel
+    await ctx.send(replacetrans("select_song",str(ctx.author.id)))
+    msg=""
+    for x in range(len(xuanze)):
+        cr=xuanze[x]
+        msg = msg + str(x) + ".  " + str(artistslistpurifier(cr['artists'])) + "——" + cr["name"] +"\n"
+    await ctx.send(msg)
+    selection = await atri.wait_for('message',check=check )
+    selection=selection.content
+    try:
+        return str(xuanze[int(selection)-1]["id"])
+    except:
+        await ctx.send(replacetrans("select_song_cancel",str(ctx.author.id)))
+        return -1
+
+
 
 @atri.command(aliases=["播放", "queue", "播放列表"])
 async def play(ctx, *a):
@@ -1004,6 +1011,9 @@ async def play(ctx, *a):
             await ctx.send("播放失败")
 
 async def play163(ctx, id):
+    if id==-1:
+        #canceled
+        return
     if not await dl163ali(id):  # 调用await dl163ali，如果歌曲可以下载会下载歌曲，不可以的话会返回 False 所以下面不需要调用
         await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
         return
@@ -1208,7 +1218,12 @@ async def currentsong(ctx, *a):
 @atri.command()
 async def fix(ctx):
     user=await atri.fetch_user(834651231871434752)
+    efn=dirpath + "./err"+str(round(time.time()))+".txt"
+    with codecs.open(efn, encoding='utf-8', mode='w') as file:
+        file.write(str(traceback.format_exc())+"\n\n"+str(cs)+"\n\n"+str(queues)+"\n\n"+str(players))
     await user.send("快过来修我！")
+    await user.send("错误文件：", file=discord.File(efn, "err.txt"))
+
     await ctx.send(replacetrans("developer_notified",ctx.author.id))
 
 @tasks.loop(seconds=11451 if not key["devmode"] else 15  )

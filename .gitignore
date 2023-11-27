@@ -183,9 +183,7 @@ ytdldownload*
 haogan.json
 fanyi/eng.json
 fanyi/jianzhong.json
-err.txt
 sc.json
-err.txt
 offlist.txt
 waifulist.txt
 *.m4a
@@ -202,3 +200,4 @@ langpref.json
 search163chrome.py
 cookie*
 NeteaseCloudMusicApi*
+err*

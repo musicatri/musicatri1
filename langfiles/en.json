@@ -65,5 +65,6 @@
 "atri_saving_data_finished": "Data saved, I've perfectly recorded everyone's information, meow~",
 "atri_cleaning": "Master, I'm cleaning the room~",
 "atri_cleaning_finished": "Master, the room is spotlessly clean now, meow~",
-"select_song": "Select a song (enter the number in front of the song):"
+"select_song": "Select a song (enter the number in front of the song, respond c to cancel):",
+"select_song_cancel":"playback cancelled"
 }
