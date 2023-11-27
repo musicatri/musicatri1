@@ -877,8 +877,8 @@ async def rankings(ctx):
     songtable.align = 'l'
     songtable.set_style(PLAIN_COLUMNS)
     ct = 1
-    msg = "```!全dc亚托莉放的最多的歌曲前三十!\n"
-    for id in sorted(plays, key=plays.get, reverse=True)[:30]:
+    msg = "```!全dc亚托莉放的最多的歌曲前二 十!\n"
+    for id in sorted(plays, key=plays.get, reverse=True)[:20]:
         try:
             int(id)
             songtable.add_row([ct,  plays[id],str(await getsongartists(id)) + "——" + str(await getsongname(id))])
