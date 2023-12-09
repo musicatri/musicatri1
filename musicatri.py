@@ -85,6 +85,7 @@ if key["devmode"]:
 app.config['DISCORD_CLIENT_ID'] = key["DISCORD_CLIENT_ID"]
 app.config['DISCORD_CLIENT_SECRET'] = key["DISCORD_CLIENT_SECRET"]
 app.config['DISCORD_REDIRECT_URI'] = key["songctlhost"]+"/account/callback"
+print("Oauth2 redirect uri是"+key["songctlhost"]+"/account/callback"+"喵~")
 discordauth = DiscordOAuth2Session(app)
 
 
