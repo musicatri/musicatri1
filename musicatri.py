@@ -35,16 +35,16 @@ if not exists(dirpath + "cookie.txt"):
 else:
     with codecs.open("cookie.txt", encoding='utf-8', mode='r') as r:
         cookie = r.read()
+
 from os import system as cmd
 from prettytable import PrettyTable
 from prettytable import PLAIN_COLUMNS
-from flask import Flask
-from flask import request
-from flask import send_file
-from flask import send_from_directory
+from flask import Flask, send_from_directory,  redirect, url_for,request,send_file,render_template, session
+from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 import ast
 import asyncio
 import os
+import secrets
 import platform
 import random
 import traceback
@@ -75,14 +75,26 @@ with codecs.open(dirpath + "haogan.json", encoding='utf-8', mode='r') as f:
     userdata = json.loads(f.read())
 with codecs.open(dirpath + "waifulist.txt", encoding="utf-8", mode="r") as f:
     waifulist = ast.literal_eval(f.read())
-
 with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
     blacklist = json.loads(f.read())
+
+app.secret_key = "asdfasdfasdlf"  # Replace with a secure secret key
+if key["devmode"]:
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
+# Discord OAuth2 configuration
+app.config['DISCORD_CLIENT_ID'] = key["DISCORD_CLIENT_ID"]
+app.config['DISCORD_CLIENT_SECRET'] = key["DISCORD_CLIENT_SECRET"]
+app.config['DISCORD_REDIRECT_URI'] = key["songctlhost"]+"/account/callback"
+discordauth = DiscordOAuth2Session(app)
+
+
 translations={}
 for file in os.listdir(dirpath+"langfiles"):
     if file.find(".json") != -1:
         with codecs.open(dirpath + "langfiles/"+file, encoding="utf-8", mode="r") as f:
             translations[file]=json.loads(f.read())
+
+
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': dirpath+'ytdltemp/%(id)s.%(ext)s',
@@ -100,8 +112,257 @@ ytdl_format_options = {
 if key["ytdlproxy"]:
     ytdl_format_options['proxy']=key['ytdlproxy']
 print("我的名字是" + str(name) + "。谢谢主人给我起这么好听的名字！")
+
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
+
+# Storing user data
+tokens={}
+
+@app.route('/profile-test')
+def home():
+    user = discordauth.fetch_user()
+    gl={}
+    for g in user.fetch_guilds():
+        gl[g.id]=g.name
+    print(gl)
+    return f"""
+        <html>
+        <head>
+        <title>{user.name}</title>
+        </head>
+        <body>
+        <img src='{user.avatar_url or user.default_avatar_url}' />
+        <br>
+        Guilds:{str(gl)}
+        <br>
+        <code></code>
+        <br />
+        </body>
+        </html>
+        """
+
+@app.route('/getprofile')
+def getprofile():
+    try:
+        user=discordauth.fetch_user()
+        userjson=user.to_json()
+        avatar=user.avatar_url or user.default_avatar_url
+        userjson["avatar"] = avatar
+        userjson["login"] = True
+        return json.dumps(userjson)
+    except:
+        return json.dumps({"login":False})
+
+
+
+#<a href={url_for("my_connections")}>Connections</a>
+@app.route('/account/login')
+def login():
+    args=request.args.to_dict()
+    return discordauth.create_session(scope=["guilds","identify"],data={"returnguildid":args["id"]})
+
+
+
+@app.route("/account/logout/")
+def logout():
+    args=request.args.to_dict()
+    discordauth.revoke()
+    return redirect(key["songctladdr"]+args["id"])
+
+
+@app.route('/account/callback')
+def callback():
+    result=discordauth.callback()
+    return redirect(key["songctladdr"]+result.get('returnguildid'))
+
+@app.route('/updatesongqueue', methods = ['POST'])
+def updatesongqueue():
+    if discordauth.authorized:
+        if checkuser(request.json["guildid"], discordauth.fetch_user().id):
+            guildid=int(request.json["guildid"])
+            newqueuelist=request.json["newqueue"]
+            newqueue={}
+            oldqueue=queues[guildid]
+            for song in newqueuelist:
+                newqueue[song]=oldqueue[song]
+            queues[guildid]=newqueue
+            return "updated queue"+str(list(queues[guildid].keys()))
+        else:
+            return "unconnected"
+    else:
+        return  "unauthorized"
+@app.route('/deletesong', methods = ['POST'])
+def deletesong():
+    if discordauth.authorized:
+        if checkuser(request.json["guildid"], discordauth.fetch_user().id):
+
+            guildid=int(request.json["guildid"])
+            songname=request.json["songname"]
+            queues[guildid].pop(songname)
+            return "updated queue"+str(list(queues[guildid].keys()))
+        else:
+            return "unconnected"
+    else:
+        return "unauthorized"
+
+
+def checkuser(guildid, userid):
+    guildid=int(guildid)
+    userid=int(userid)
+    try:
+        connectedusers = [member.id for member in players[guildid].channel.members]
+        print(connectedusers)
+        if userid in connectedusers:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(e)
+        return False
+
+@app.route('/requestnewsong', methods = ['POST'])
+async def requestnewsong():
+    if discordauth.authorized:
+        guildid=int(request.json["guildid"])
+        userid=discordauth.fetch_user().id
+        if checkuser(guildid, userid):
+            guild = atri.get_guild(int(guildid))
+
+            #players[guildid] = discord.utils.get(atri.voice_clients, guild=guild)
+            a=request.json["songname"]
+            id = await getsongid(a)
+            if type(id) == type(()):
+                #目前还没有实现网页歌曲选择
+                #默认选取第一手歌
+                id=id[0]
+            if id == -1:
+                return "这是什么歌曲，亚托莉无法播放哦!"
+            if not players[guildid].is_playing():
+                if id:
+                    if not await dl163ali(id):
+                        return
+                    songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
+                    cs[guildid] = songandartname
+                    file=dirpath + "./songcache/" + id + ".mp3"
+                    songduration[songandartname]=getmp3duration(file)
+                    players[guildid].play(discord.FFmpegPCMAudio(file), after=partial(ckqueue, guild))
+                    cstarttime[guildid]=int(time.time()*1000)
+                    add1play(id)
+                    return "正在播放："+songandartname
+                else:
+                    vid = await getyt(a)
+                    cs[guildid] = vid[1]["title"]
+                    songduration[vid[1]["title"]]=vid[1]["duration"]
+
+                    players[guildid].play(vid[0], after=partial(ckqueue, guild))
+                    cstarttime[guildid]=int(time.time()*1000)
+
+                    add1play(vid[1]["url"])
+                    return "正在播放："+vid[1]["title"]
+            else:
+                if id:
+                    a=await dl163ali(id)
+                    if not a:
+                        return "暂时不支持vip歌曲，ご主人様ごめなさい！！"
+                    songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
+                    file=dirpath + "./songcache/" + id + ".mp3"
+                    try:
+                        if songandartname in queues[guildid].keys():
+                            songandartname=songandartname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
+                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
+                        else:
+                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
+                    except Exception as e:
+                        queues[guildid] = {}
+                        queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
+                    songduration[songandartname]=getmp3duration(file)
+
+                    return songandartname+"已添加到播放列表"
+                else:
+                    song = await getyt(a)
+                    try:
+                        if song[1]["title"] in queues[guildid].keys():
+                            newname=song[1]["title"] + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
+                            songduration[newname]=song[1]["duration"]
+                            queues[guildid][newname] = song
+                        else:
+                            queues[guildid][song[1]["title"]] = song
+                            songduration[song[1]["title"]]=song[1]["duration"]
+                    except:
+                        queues[guildid] = {}
+                        queues[guildid][song[1]["title"]] = song
+                        songduration[song[1]["title"]]=song[1]["duration"]
+                    return song[1]["title"]+"已添加到播放列表"
+            return "ok"
+        else:
+            return "please join the voice channel first"
+    else:
+        return "unauthorized"
+
+@app.route('/getcurrentsong', methods = ['GET'])
+def getcurrentsong():
+    try:
+        args = request.args.to_dict()
+        a={"songname":cs[int(args["id"])],"duration":songduration[cs[int(args["id"])]],"starttime":cstarttime[int(args["id"])],"playing":players[int(args["id"])].is_playing()}
+        return json.dumps(a)
+    except:
+        return json.dumps({})
+@app.route('/getcurrentqueue', methods = ['GET'])
+def getcurrentqueue():
+    args = request.args.to_dict()
+    try:
+        return json.dumps(list(queues[int(args["id"])].keys()))
+    except:
+        return json.dumps([])
+
+@app.route('/changesongstate', methods = ['POST'])
+def changesongstate():
+    if discordauth.authorized:
+        if checkuser(request.json["guildid"], discordauth.fetch_user().id):
+            if request.json["action"] == "next":
+                players[int(request.json["guildid"])] = discord.utils.get(atri.voice_clients, guild=atri.get_guild(int(request.json["guildid"])))
+                if players[int(request.json["guildid"])]:
+                    try:
+                        if queues[int(request.json["guildid"])]:
+                            players[int(request.json["guildid"])].stop()
+                            id = next(iter(queues[int(request.json["guildid"])]))
+                            players[int(request.json["guildid"])] = discord.utils.get(atri.voice_clients, guild=atri.get_guild(int(request.json["guildid"])))
+                            badidea = id.find("⠀⠀⠀")
+                            if badidea != -1:
+                                id = id[:badidea]
+                            cs[int(request.json["guildid"])] = id
+                        else:
+                            players[int(request.json["guildid"])].stop()
+                    except:
+                        print(traceback.format_exc())
+                        players[int(request.json["guildid"])].stop()
+                else:
+                    return "no"
+            elif request.json["action"] == "pause":
+                players[int(request.json["guildid"])] = discord.utils.get(atri.voice_clients, guild=atri.get_guild(int(request.json["guildid"])))
+                if players[int(request.json["guildid"])]:
+                    if players[int(request.json["guildid"])].is_playing():
+                        players[int(request.json["guildid"])].pause()
+                        pausesong(int(request.json["guildid"]))
+                    else:
+                        players[int(request.json["guildid"])].resume()
+                        cstarttime[int(request.json["guildid"])]=cstarttime[int(request.json["guildid"])]+pausesong(int(request.json["guildid"]))
+                else:
+                    return "no"
+            else:
+                return "这是什么命令，亚托莉看不懂。亚托莉去问一下夏生先生！"
+            return "ok"
+        else:
+            return "unconnected"
+    else:
+        return "unauthorized"
+@app.route('/songctl',methods = ['GET'])
+def songctl():
+    return send_file(dirpath+"website/songctl.html")
+@app.route('/<path:path>')
+def send_report(path):
+    return send_from_directory('website', path)
 
 
 async def getsongdetails(id):
@@ -165,149 +426,6 @@ async def getalbum(sn):
             for i in id:
                 nl.append(str(i['id']))
             return nl
-
-@app.route('/updatesongqueue', methods = ['POST'])
-def updatesongqueue():
-    guildid=int(request.json["guildid"])
-    newqueuelist=request.json["newqueue"]
-    newqueue={}
-    oldqueue=queues[guildid]
-    for song in newqueuelist:
-        newqueue[song]=oldqueue[song]
-    queues[guildid]=newqueue
-    return "updated queue"+str(list(queues[guildid].keys()))
-@app.route('/deletesong', methods = ['POST'])
-def deletesong():
-    guildid=int(request.json["guildid"])
-    songname=request.json["songname"]
-    queues[guildid].pop(songname)
-    return "updated queue"+str(list(queues[guildid].keys()))
-@app.route('/requestnewsong', methods = ['POST'])
-async def requestnewsong():
-    guildid=int(request.json["guildid"])
-    a=request.json["songname"]
-    guild=atri.get_guild(int(guildid))
-    players[guildid] = discord.utils.get(atri.voice_clients, guild=guild)
-    id = await getsongid(a)
-    if type(id) == type(()):
-        #目前还没有实现网页歌曲选择
-        #默认选取第一手歌
-        id=id[0]
-    if id == -1:
-        return "这是什么歌曲，亚托莉无法播放哦!"
-    if not players[guildid].is_playing():
-        if id:
-            if not await dl163ali(id):
-                return
-            songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
-            cs[guildid] = songandartname
-            file=dirpath + "./songcache/" + id + ".mp3"
-            songduration[songandartname]=getmp3duration(file)
-            players[guildid].play(discord.FFmpegPCMAudio(file), after=partial(ckqueue, guild))
-            cstarttime[guildid]=int(time.time()*1000)
-            add1play(id)
-            return "正在播放："+songandartname
-        else:
-            vid = await getyt(a)
-            cs[guildid] = vid[1]["title"]
-            songduration[vid[1]["title"]]=vid[1]["duration"]
-
-            players[guildid].play(vid[0], after=partial(ckqueue, guild))
-            cstarttime[guildid]=int(time.time()*1000)
-
-            add1play(vid[1]["url"])
-            return "正在播放："+vid[1]["title"]
-    else:
-        if id:
-            a=await dl163ali(id)
-            if not a:
-                return "暂时不支持vip歌曲，ご主人様ごめなさい！！"
-            songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
-            file=dirpath + "./songcache/" + id + ".mp3"
-            try:
-                if songandartname in queues[guildid].keys():
-                    songandartname=songandartname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                    queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
-                else:
-                    queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
-            except Exception as e:
-                queues[guildid] = {}
-                queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
-            songduration[songandartname]=getmp3duration(file)
-
-            return songandartname+"已添加到播放列表"
-        else:
-            song = await getyt(a)
-            try:
-                if song[1]["title"] in queues[guildid].keys():
-                    newname=song[1]["title"] + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                    songduration[newname]=song[1]["duration"]
-                    queues[guildid][newname] = song
-                else:
-                    queues[guildid][song[1]["title"]] = song
-                    songduration[song[1]["title"]]=song[1]["duration"]
-            except:
-                queues[guildid] = {}
-                queues[guildid][song[1]["title"]] = song
-                songduration[song[1]["title"]]=song[1]["duration"]
-            return song[1]["title"]+"已添加到播放列表"
-    return "ok"
-@app.route('/getcurrentsong', methods = ['GET'])
-def getcurrentsong():
-    try:
-        args = request.args.to_dict()
-        a={"songname":cs[int(args["id"])],"duration":songduration[cs[int(args["id"])]],"starttime":cstarttime[int(args["id"])],"playing":players[int(args["id"])].is_playing()}
-        return json.dumps(a)
-    except:
-        return json.dumps({})
-@app.route('/getcurrentqueue', methods = ['GET'])
-def getcurrentqueue():
-    args = request.args.to_dict()
-    try:
-        return json.dumps(list(queues[int(args["id"])].keys()))
-    except:
-        return json.dumps([])
-@app.route('/changesongstate', methods = ['POST'])
-def changesongstate():
-    if request.json["action"] == "next":
-        players[int(request.json["guildid"])] = discord.utils.get(atri.voice_clients, guild=atri.get_guild(int(request.json["guildid"])))
-        if players[int(request.json["guildid"])]:
-            try:
-                if queues[int(request.json["guildid"])]:
-                    players[int(request.json["guildid"])].stop()
-                    id = next(iter(queues[int(request.json["guildid"])]))
-                    players[int(request.json["guildid"])] = discord.utils.get(atri.voice_clients, guild=atri.get_guild(int(request.json["guildid"])))
-                    badidea = id.find("⠀⠀⠀")
-                    if badidea != -1:
-                        id = id[:badidea]
-                    cs[int(request.json["guildid"])] = id
-                else:
-                    players[int(request.json["guildid"])].stop()
-            except:
-                print(traceback.format_exc())
-                players[int(request.json["guildid"])].stop()
-        else:
-            return "no"
-    elif request.json["action"] == "pause":
-        players[int(request.json["guildid"])] = discord.utils.get(atri.voice_clients, guild=atri.get_guild(int(request.json["guildid"])))
-        if players[int(request.json["guildid"])]:
-            if players[int(request.json["guildid"])].is_playing():
-                players[int(request.json["guildid"])].pause()
-                pausesong(int(request.json["guildid"]))
-            else:
-                players[int(request.json["guildid"])].resume()
-                cstarttime[int(request.json["guildid"])]=cstarttime[int(request.json["guildid"])]+pausesong(int(request.json["guildid"]))
-        else:
-            return "no"
-    else:
-        return "这是什么命令，亚托莉看不懂。亚托莉去问一下夏生先生！"
-    return "ok"
-@app.route('/songctl',methods = ['GET'])
-def songctl():
-    return send_file(dirpath+"website/songctl.html")
-@app.route('/<path:path>')
-def send_report(path):
-    return send_from_directory('website', path)
 
 def getmp3duration(file):
     audio = MP3(file)
