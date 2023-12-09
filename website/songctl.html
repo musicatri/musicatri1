@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html >
 <head>
   <title>musicatri音乐控制</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.13.0/Sortable.min.js"></script>
@@ -18,10 +18,10 @@
   }
 
   body {
-        cursor: url('/cursor.png'), auto;
+        cursor: url('./cursor.png'), auto;
     font-family: Arial, sans-serif;
-    margin: 0 px;
-    padding: 0 px;
+    margin: 0;
+    padding: 0;
     text-align: center;
     background-color: #f2f2f2;
     color: #333;
@@ -170,16 +170,53 @@ body.dark-mode button.delete-button:hover {
        background-size: cover;
          	background-repeat: no-repeat;
          	min-height: 100vh;
-         	background: white url('/bg.png') center center no-repeat;
+         	background: white url('./bg.png') center center no-repeat;
          	-webkit-background-size: cover;
          	-moz-background-size: cover;
          	-o-background-size: cover;
+  }
+
+  #login-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+  }
+
+  #avatar-image {
+    width: 30px; /* Adjust the size as needed */
+    height: 30px; /* Adjust the size as needed */
+    border-radius: 50%; /* Make it circular */
+    margin-right: 8px; /* Add some space between the avatar and login button */
+  }
+
+  #login-button {
+    padding: 10px;
+    font-size: 14px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  #login-button:hover {
+    background-color: #45a049;
   }
 
   </style>
 
 </head>
 <body>
+
+<div id="login-container">
+    <img src="https://cdn.discordapp.com/emojis/1164512483357241396.webp?size=240&quality=lossless" alt="Avatar" id="avatar-image">
+    <div id="username-text">未登录喵~</div>
+    <button id="login-button" onclick="loginlink()"  >Login</button>
+  </div>
+
+
 
 <h1 ><div id="songctltitle">音乐控制</div>
 </h1>
@@ -188,7 +225,7 @@ body.dark-mode button.delete-button:hover {
 当前歌曲:</div><span id="cs"></span>
 <br>
 <div class="slidecontainer">
-  <input type="range" min="1" max="100" value="50" class="slider" style="width=70%" id="songtimeslider">
+  <input type="range" min="1" max="100" value="50" class="slider" style="width:70%" id="songtimeslider">
 </div>
 <br>
 <button type="button" id="stop" onclick="
@@ -234,7 +271,7 @@ fetch(url+'/requestnewsong', {
 
 " name="button">添加歌曲</button>
 <br>
-<h2><div id="playlist">播放列表（可拖动更改顺序）：</h2>
+<h2><div id="playlist">播放列表（可拖动更改顺序）：</div></h2>
   <ul id="sortable-list">
 
 
@@ -267,10 +304,39 @@ fetch(url+'/requestnewsong', {
 
 
   <script>
+      var logedin;
+      function updateProfile(){
+           fetch(url+"/getprofile")
+    .then(response => response.json())
+    .then(responsejson => {
+        if (responsejson.login) {
+
+            document.getElementById("avatar-image").src = responsejson.avatar;
+            document.getElementById("username-text").innerText = responsejson.username;
+            document.getElementById("login-button").innerText="退出登陆";
+             logedin=true;
+
+        }
+        else{
+    console.log("未登录喵")
+            logedin=false;
+        }
+
+    });
+      }
   const prams = new URLSearchParams(window.location.search);
 const guildid = prams.get("id");
 const url='http://'+window.location.hostname +':'+location.port
 var isDragging = false;
+function loginlink(){
+    if (!logedin){
+    window.location.href=url+"/account/login"+"?id="+guildid}
+    else{
+            window.location.href=url+"/account/logout"+"?id="+guildid
+
+    }
+}
+
 function toggleDarkMode() {
   const body = document.querySelector("body");
   const isDarkMode = body.classList.toggle("dark-mode");
@@ -515,7 +581,7 @@ function getCurrentSong() {
 
 updateContent();
 
-
+updateProfile();
   </script>
 </body>
 <footer>
