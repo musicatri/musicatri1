@@ -192,7 +192,7 @@ def updatesongqueue():
         else:
             return "unconnected"
     else:
-        return  "unauthorized"
+        return  "请先登录喵~"
 @app.route('/deletesong', methods = ['POST'])
 def deletesong():
     if discordauth.authorized:
@@ -205,7 +205,7 @@ def deletesong():
         else:
             return "unconnected"
     else:
-        return "unauthorized"
+        return "请先登录喵~"
 
 
 def checkuser(guildid, userid):
@@ -299,7 +299,7 @@ async def requestnewsong():
         else:
             return "please join the voice channel first"
     else:
-        return "unauthorized"
+        return "请先登录喵~"
 
 @app.route('/getcurrentsong', methods = ['GET'])
 def getcurrentsong():
@@ -357,7 +357,7 @@ def changesongstate():
         else:
             return "unconnected"
     else:
-        return "unauthorized"
+        return "请先登录喵~"
 @app.route('/songctl',methods = ['GET'])
 def songctl():
     return send_file(dirpath+"website/songctl.html")
