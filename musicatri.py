@@ -259,7 +259,7 @@ async def requestnewsong():
                     players[guildid].play(vid[0], after=partial(ckqueue, guild))
                     cstarttime[guildid]=int(time.time()*1000)
 
-                    add1play(vid[1]["url"])
+                    add1play(vid[1]["title"])
                     return "正在播放："+vid[1]["title"]
             else:
                 if id:
@@ -534,7 +534,7 @@ async def playt(ctx, vid):
     cstarttime[ctx.guild.id]=int(time.time()*1000)
     await ctx.send(    replacetrans("now_playing",ctx.author.id,vid[1]["title"]) )
     await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
-    add1play(vid[1]["url"])
+    add1play(vid[1]["title"])
 
 async def addtoqueueyt(ctx, song):
     if type(song) == type([]):
@@ -635,7 +635,7 @@ def ckqueue(guild, uselessd, uselessd2=None):
         cs[guild.id] = id
         players[guild.id].play(song[0], after=partial(ckqueue, guild))
         cstarttime[guild.id]=int(time.time()*1000)
-        add1play(song[1]["url"])
+        add1play(song[1]["title"])
     except Exception as e:
         cs[guild.id] = False
 

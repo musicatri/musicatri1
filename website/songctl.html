@@ -229,7 +229,9 @@ body.dark-mode button.delete-button:hover {
 </div>
 <br>
 <button type="button" id="stop" onclick="
-
+if (!logedin){
+    alert("请先登录/please login first")
+}
 fetch(url+'/changesongstate', {
     method: 'POST',
     headers: {
@@ -242,6 +244,9 @@ fetch(url+'/changesongstate', {
 
  <button type="button" id="next"
  onclick="
+ if (!logedin){
+    alert("请先登录/please login first")
+}
 fetch(url+'/changesongstate', {
     method: 'POST',
     headers: {
@@ -253,6 +258,9 @@ fetch(url+'/changesongstate', {
 >⏩</button>
 
 <button type="button" id="addsong" onclick="
+if (!logedin){
+    alert("请先登录/please login first")
+}
 var songname=prompt('输入歌名/youtube链接/bilibili链接/网易云歌曲链接:');
 if (songname==''){
     alert('nice try')
