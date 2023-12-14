@@ -1209,7 +1209,7 @@ async def sorry(ctx, *v):
                         raise RuntimeError("当前频道里有可怕的coffee，拒绝执行。红豆泥！私密马赛~~~")
         pass
     except Exception as e:
-        await ctx.send("亚托莉炸了 https://cdn.discordapp.com/attachments/1123003419137941626/1168483140919103528/ev012b3.png")
+        await ctx.send("亚托莉炸了 QAQ")
         with open("err.txt", "w") as file:
             file.write(str(traceback.format_exc()))
         # send file to Discord in message

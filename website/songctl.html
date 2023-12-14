@@ -229,10 +229,7 @@ body.dark-mode button.delete-button:hover {
 </div>
 <br>
 <button type="button" id="stop" onclick="
-if (!logedin){
-    alert("请先登录/please login first")
-}
-fetch(url+'/changesongstate', {
+if (!logedin){alert('请先登录 please login first'); };fetch(url+'/changesongstate', {
     method: 'POST',
     headers: {
         'Accept': 'application/json',
@@ -245,7 +242,7 @@ fetch(url+'/changesongstate', {
  <button type="button" id="next"
  onclick="
  if (!logedin){
-    alert("请先登录/please login first")
+    alert('请先登录 please login first');
 }
 fetch(url+'/changesongstate', {
     method: 'POST',
@@ -259,7 +256,7 @@ fetch(url+'/changesongstate', {
 
 <button type="button" id="addsong" onclick="
 if (!logedin){
-    alert("请先登录/please login first")
+    alert('请先登录/please login first')
 }
 var songname=prompt('输入歌名/youtube链接/bilibili链接/网易云歌曲链接:');
 if (songname==''){
