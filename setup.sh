@@ -1,5 +1,4 @@
-sudo apt install python3 python3-pip ffmpeg  python3-venv
-
+sudo apt install python3 python3-pip ffmpeg  python3-venv git -y
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg
 sudo mkdir -p /etc/apt/keyrings
@@ -21,5 +20,5 @@ mkdir ytdltemp
 git clone https://github.com/Binaryify/NeteaseCloudMusicApi.git
 cd NeteaseCloudMusicApi
 npm install
-cd ..
+cd .. -y
 python3 setup.py
