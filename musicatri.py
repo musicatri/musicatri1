@@ -14,7 +14,7 @@ with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     key = json.loads(r.read())
     name = key["name"]
     print("主人我的云控制链接是"+key["songctladdr"])
-if not key["devmode"]:
+if  key["devmode"]:
     subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
     cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
     print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
@@ -236,11 +236,12 @@ async def requestnewsong():
             if type(id) == type(()):
                 #目前还没有实现网页歌曲选择
                 #默认选取第一手歌
-                id=id[0]
+                id=str(id[0]["id"])
             if id == -1:
                 return "这是什么歌曲，亚托莉无法播放哦!"
             if not players[guildid].is_playing():
                 if id:
+                    print(id)
                     if not await dl163ali(id):
                         return
                     songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
