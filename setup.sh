@@ -20,5 +20,5 @@ mkdir ytdltemp
 git clone https://github.com/Binaryify/NeteaseCloudMusicApi.git
 cd NeteaseCloudMusicApi
 npm install
-cd .. -y
+cd ..
 python3 setup.py
