@@ -826,12 +826,14 @@ async def unban(ctx, id):
 async def langset(ctx, *lang):
     global langpref
     if not lang:
-        await ctx.send("avaliable languages:"+str(os.listdir(dirpath+"langfiles")))
+        await ctx.send("available languages:"+str(translations.keys())
+                       +"\nalangset <language>\nExample: alangset jp"
+                       )
     else:
-        if lang[0] in os.listdir(dirpath+"langfiles") or lang[0]+".json" in os.listdir(dirpath+"langfiles"):
+        if lang[0] in translations.keys() or lang[0]+".json" in translations.keys():
             langpref[str(ctx.author.id)]=lang[0].replace(".json","")+".json"
         else:
-            await ctx.send("avaliable languages:"+str(os.listdir(dirpath+"langfiles")))
+            await ctx.send("available languages:"+str(translations.keys()))
 
 @atri.command()
 async def spelling(ctx):
