@@ -79,8 +79,8 @@ with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
     blacklist = json.loads(f.read())
 
 app.secret_key = "asdfasdfasdlf"  # Replace with a secure secret key
-if key["devmode"]:
-    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
+#if key["devmode"]: bad idea
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
 # Discord OAuth2 configuration
 app.config['DISCORD_CLIENT_ID'] = key["DISCORD_CLIENT_ID"]
 app.config['DISCORD_CLIENT_SECRET'] = key["DISCORD_CLIENT_SECRET"]
