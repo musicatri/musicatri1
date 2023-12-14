@@ -999,8 +999,10 @@ async def rankings(ctx):
     songtable.align = 'l'
     songtable.set_style(PLAIN_COLUMNS)
     ct = 1
-    msg = "```!全dc亚托莉放的最多的歌曲前二 十!\n"
-    for id in sorted(plays, key=plays.get, reverse=True)[:20]:
+    msg = "```!全dc亚托莉放的最多的歌曲前二十!\n"
+    rankedlist= sorted(plays, key=plays.get, reverse=True)[:20]
+
+    for id in rankedlist[:10]:
         try:
             int(id)
             songtable.add_row([ct,  plays[id],str(await getsongartists(id)) + "——" + str(await getsongname(id))])
@@ -1010,10 +1012,24 @@ async def rankings(ctx):
             #msg = msg + str(ct) + ".  " +id+ " || " + str(plays[id]) + "次播放。\n"
             songtable.add_row([ct, plays[id], id ])
             ct = ct + 1
-
-
-
     await ctx.send(msg+str(songtable)+"```")
+    songtable = PrettyTable()
+    songtable.field_names = [" ", "  ", "   "]
+    songtable.align = 'l'
+    songtable.set_style(PLAIN_COLUMNS)
+    ct = 1
+    for id in rankedlist[10:]:
+        try:
+            int(id)
+            songtable.add_row([ct+10, plays[id], str(await getsongartists(id)) + "——" + str(await getsongname(id))])
+            # msg = msg + str(ct) + ".  " +str(await getsongartists(id)) + "——" + str(await getsongname(id))+ " || " + str(plays[id]) + "次播放。\n"
+            ct = ct + 1
+        except:
+            # msg = msg + str(ct) + ".  " +id+ " || " + str(plays[id]) + "次播放。\n"
+            songtable.add_row([ct+10, plays[id], id])
+            ct = ct + 1
+    await ctx.send("```" + str(songtable) + "```")
+
 def artistslistpurifier(j):
     nl=[]
     for i in j:
