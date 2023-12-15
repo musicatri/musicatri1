@@ -14,7 +14,7 @@ with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     key = json.loads(r.read())
     name = key["name"]
     print("主人我的云控制链接是"+key["songctladdr"])
-if  key["devmode"]:
+if not key["devmode"]:
     subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
     cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
     print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
@@ -119,6 +119,18 @@ ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 # Storing user data
 tokens={}
+openai.api_key = key["gptkey"]
+queues = {}
+adding = {}
+cs = {}
+players = {}
+waifucd = {}
+intents = discord.Intents.all()
+atri = commands.AutoShardedBot(command_prefix=name, intents=intents,help_command=None)
+scm={}
+songduration={}
+cstarttime={}
+pausetime={}
 
 @app.route('/profile-test')
 def home():
@@ -207,30 +219,45 @@ def deletesong():
     else:
         return "请先登录喵~"
 
-
 def checkuser(guildid, userid):
+    global players
     guildid=int(guildid)
     userid=int(userid)
-    try:
+    if guildid in players.keys():
         connectedusers = [member.id for member in players[guildid].channel.members]
-        print(connectedusers)
         if userid in connectedusers:
             return True
         else:
             return False
-    except Exception as e:
-        print(e)
-        return False
+    else:
+        #bot not in voice channel
+        guild = atri.get_guild(guildid)
+        requester = guild.get_member(userid)
+        if userid in [member.id for member in requester.voice.channel.members]:
+            return requester.voice.channel
 
+        else:
+            return False
+workaround=[]
 @app.route('/requestnewsong', methods = ['POST'])
 async def requestnewsong():
+    global workaround
     if discordauth.authorized:
         guildid=int(request.json["guildid"])
         userid=discordauth.fetch_user().id
-        if checkuser(guildid, userid):
-            guild = atri.get_guild(int(guildid))
+        checkuserresult=checkuser(guildid, userid)
+        guild = atri.get_guild(guildid)
+        if checkuserresult:
+            if checkuserresult != True:
+                #calling channel.join() will cause a bug in the flask thread
+                # players[guildid] = discord.utils.get(atri.voice_clients, name=guild) will return None
 
-            #players[guildid] = discord.utils.get(atri.voice_clients, guild=guild)
+
+                workaround.append([checkuserresult, guildid,guild])
+                while(1):
+                    if guildid in players.keys():
+                        break
+                    await asyncio.sleep(1)
             a=request.json["songname"]
             id = await getsongid(a)
             if type(id) == type(()):
@@ -298,6 +325,7 @@ async def requestnewsong():
                     return song[1]["title"]+"已添加到播放列表"
             return "ok"
         else:
+            print("no connect")
             return "please join the voice channel first"
     else:
         return "请先登录喵~"
@@ -640,18 +668,7 @@ def ckqueue(guild, uselessd, uselessd2=None):
     except Exception as e:
         cs[guild.id] = False
 
-openai.api_key = key["gptkey"]
-queues = {}
-adding = {}
-cs = {}
-players = {}
-waifucd = {}
-intents = discord.Intents.all()
-atri = commands.AutoShardedBot(command_prefix=name, intents=intents,help_command=None)
-scm={}
-songduration={}
-cstarttime={}
-pausetime={}
+
 @atri.event
 async def on_member_update(before, after):
     if str(before.guild.id) == "937939784494612570":
@@ -754,6 +771,7 @@ async def on_ready():
     print("主人我上线啦(｡･ω･｡)ﾉ♡")
     print("主人我目前加入了"+str(len(atri.guilds))+"个服务器哦")
     writeplays.start()
+    connecttovoice.start()
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
 
 async def getsongid(sn):
@@ -1069,6 +1087,8 @@ async def play(ctx, *a):
                 if id == -1:
                     return
                 if not players[ctx.guild.id].is_playing():
+                    if players[ctx.guild.id].channel != ctx.message.author.voice.channel:
+                        await players[ctx.guild.id].move_to(ctx.message.author.voice.channel)
                     if id:
                         if type(id) == type([]):
                             fid = id.pop(0)
@@ -1177,17 +1197,24 @@ async def disconnect(ctx, *a):
     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
     if players[ctx.guild.id]:
         await players[ctx.guild.id].disconnect()
+        players.pop(ctx.guild.id)
         await ctx.send(replacetrans("bye",ctx.author.id))
     else:
         await ctx.send(replacetrans("bye_mad",ctx.author.id))
-
 @atri.command(aliases=["连接"])
 async def connect(ctx, *a):
     if ctx.author.voice:
-        await ctx.message.author.voice.channel.connect()
-        players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
-        await ctx.send(replacetrans("connect",ctx.author.id))
-        await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
+        if ctx.guild.id in players.keys():
+            if not players[ctx.guild.id].is_playing():
+                await players[ctx.guild.id].move_to(ctx.message.author.voice.channel)
+            else:
+                await ctx.send('no')
+        else:
+            await ctx.message.author.voice.channel.connect()
+            players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
+
+            await ctx.send(replacetrans("connect",ctx.author.id))
+            await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
     else:
         await ctx.send(replacetrans("error_not_connected",ctx.author.id))
 
@@ -1303,6 +1330,8 @@ async def skip(ctx, a=1):
 async def level(ctx, *a):
     await ctx.send(userdata[str(ctx.author.id)]["haogandu"])
 
+
+
 @atri.command()
 async def stopadding(ctx):
     adding[ctx.guild.id] = False
@@ -1388,6 +1417,13 @@ async def writeplays():
     # #         os.remove(filename)
     # #1
     # print("主人，房间已经清扫的干干净净了喵~")
+@tasks.loop(seconds=1)
+async def connecttovoice():
+    if len(workaround)>0:
+        connectinfo=workaround.pop()
+        await connectinfo[0].connect()
+        players[connectinfo[1]] = discord.utils.get(atri.voice_clients, guild=connectinfo[2])
+
 
 def startatri():
 
