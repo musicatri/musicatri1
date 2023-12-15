@@ -14,7 +14,7 @@ with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     key = json.loads(r.read())
     name = key["name"]
     print("主人我的云控制链接是"+key["songctladdr"])
-if  key["devmode"]:
+if not key["devmode"]:
     subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
     cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
     print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
