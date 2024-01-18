@@ -7,7 +7,8 @@ echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.co
 sudo apt update
 sudo apt install nodejs  -y
 python3 -m venv pyenv
-./pyenv/bin/python3 -m pip install gtts discord requests asyncio yt_dlp pynacl openai flask waitress aiofiles flask_discord prettytable flask[async]
+./pyenv/bin/python3 -m pip install gtts discord requests asyncio yt_dlp pynacl openai flask waitress aiofiles flask_discord prettytable 
+./pyenv/bin/python3 -m pip install flask[async]
 echo "[]" > waifulist.txt
 echo "{}" > plays.json
 echo "{}" > haogan.json
