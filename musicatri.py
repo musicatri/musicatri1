@@ -1173,7 +1173,7 @@ async def play(ctx, *a):
             with open("err.txt", "rb") as file:
                 await ctx.send( replacetrans("error_traceback",str(ctx.author.id)), file=discord.File(file, "err.txt"))
         else:
-            await ctx.send("播放失败")
+            await ctx.send("播放失败（现在可能播放不了b站）")
 
 async def play163(ctx, id):
     if id==-1:
