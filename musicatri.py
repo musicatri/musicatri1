@@ -658,7 +658,7 @@ def ckqueue(guild, uselessd, uselessd2=None):
         if guild.id not in queues or not queues[guild.id]:
             cs[guild.id] = False
             return
-        id = next(iter(queues[guild.id]))
+        id = list(queues[guild.id].keys())[0]
         song = queues[guild.id].pop(id)
         players[guild.id] = discord.utils.get(atri.voice_clients, guild=guild)
         cs[guild.id] = id
