@@ -23,15 +23,22 @@ else:
     cloudmusicapiurl = 'http://192.168.50.58:3000'
 
 if not exists(dirpath + "cookie.txt"):
-    time.sleep(10)
-    loginres = requests.get(
-        cloudmusicapiurl + "/login/cellphone?phone=" + key["NeteaseCloudMusicUsername"] + "&password=" + key[
-            "NeteaseCloudMusicPassword"])
-    cookie=quote(loginres.json()['cookie'])
-    with codecs.open(dirpath + "cookie.txt", encoding='utf-8', mode='w') as f:
-        f.write(cookie)
-    print("主人，我已经登录网易云了并且保存了cookie喵~，cookie是" + quote(
-        loginres.json()['cookie']))
+    while(1):
+        try:
+            time.sleep(10)
+            loginres = requests.get(
+                cloudmusicapiurl + "/login/cellphone?phone=" + key["NeteaseCloudMusicUsername"] + "&password=" + key[
+                    "NeteaseCloudMusicPassword"])
+            cookie=quote(loginres.json()['cookie'])
+
+            with codecs.open(dirpath + "cookie.txt", encoding='utf-8', mode='w') as f:
+                f.write(cookie)
+            print("主人，我已经登录网易云了并且保存了cookie喵~，cookie是" + quote(
+                loginres.json()['cookie']))
+            break
+        except Exception as e:
+            print(e)
+            print("主人，我登录网易云失败了喵~，请检查你的账号密码是否正确喵~ 将在十秒种后重试喵~")
 else:
     with codecs.open("cookie.txt", encoding='utf-8', mode='r') as r:
         cookie = r.read()
