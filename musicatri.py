@@ -310,12 +310,12 @@ async def requestnewsong():
                     try:
                         if songandartname in queues[guildid].keys():
                             songandartname=songandartname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
+                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname}]
                         else:
-                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
+                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname}]
                     except Exception as e:
                         queues[guildid] = {}
-                        queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id}]
+                        queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname}]
                     songduration[songandartname]=getmp3duration(file)
 
                     return songandartname+"已添加到播放列表"
@@ -631,14 +631,14 @@ async def addtoqueue163(ctx, id):
                         try:
                             if songname in queues[ctx.guild.id].keys():
                                 songname=songname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i}]
+                                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname}]
                             else:
-                                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i}]
+                                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname}]
                         except Exception as e:
                             #print(e)
                             queues[ctx.guild.id] = {}
                             #print("reset queue")
-                            queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i}]
+                            queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname}]
 
                         await ctx.send(replacetrans("added_to_playlist",ctx.author.id,songname))
                     except:
@@ -656,12 +656,12 @@ async def addtoqueue163(ctx, id):
         songduration[songname]=getmp3duration(file)
         try:
             if songname in queues[ctx.guild.id].keys():
-                queues[ctx.guild.id][songname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))] = [discord.FFmpegPCMAudio(file),{"url":id}]
+                queues[ctx.guild.id][songname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songname}]
             else:
-                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":id}]
+                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songname}]
         except Exception as e:
             queues[ctx.guild.id] = {}
-            queues[ctx.guild.id][songname] =  [discord.FFmpegPCMAudio(file),{"url":id}]
+            queues[ctx.guild.id][songname] =  [discord.FFmpegPCMAudio(file),{"url":id,"title":songname}]
         await ctx.send(replacetrans("added_to_playlist",ctx.author.id,songname))
 
 def ckqueue(guild, uselessd, uselessd2=None):
@@ -669,14 +669,17 @@ def ckqueue(guild, uselessd, uselessd2=None):
         if guild.id not in queues or not queues[guild.id]:
             cs[guild.id] = False
             return
+        print(queues)
         id = list(queues[guild.id].keys())[0]
+        cs[guild.id] = id
+        print(cs)
         song = queues[guild.id].pop(id)
         players[guild.id] = discord.utils.get(atri.voice_clients, guild=guild)
-        cs[guild.id] = id
         players[guild.id].play(song[0], after=partial(ckqueue, guild))
         cstarttime[guild.id]=int(time.time()*1000)
         add1play(song[1]["title"])
     except Exception as e:
+        print(traceback.format_exc())
         cs[guild.id] = False
 
 
@@ -1174,6 +1177,7 @@ async def play(ctx, *a):
             with codecs.open(dirpath + "./err.txt", encoding='utf-8', mode='w') as file:
                 file.write(str(traceback.format_exc()))
             # send file to Discord in message
+            print(traceback.format_exc())
             with open("err.txt", "rb") as file:
                 await ctx.send( replacetrans("error_traceback",str(ctx.author.id)), file=discord.File(file, "err.txt"))
         else:
@@ -1392,7 +1396,7 @@ async def clearqueue(ctx):
 async def currentsong(ctx, *a):
     if cs[ctx.guild.id]:
         await ctx.send(replacetrans("now_playing",ctx.author.id,cs[ctx.guild.id]))
-
+    print(cs)
 @atri.command()
 async def fix(ctx):
     user=await atri.fetch_user(834651231871434752)
