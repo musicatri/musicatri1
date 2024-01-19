@@ -500,7 +500,7 @@ function getCurrentSong() {
       if (responsejson.playing == true){
       document.getElementById("songtimeslider").max = responsejson.duration;
       document.getElementById("songtimeslider").value = (Date.now()-responsejson.starttime)/1000;
-      if (!requestjson.thumbnail){
+      if (!responsejson.thumbnail){
         document.getElementById("thumbnail").hidden = true;
       }else{
         document.getElementById("thumbnail").hidden = false;
