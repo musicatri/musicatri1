@@ -208,7 +208,7 @@ body.dark-mode button.delete-button:hover {
   </style>
 
 </head>
-<body>
+<>
 
 <div id="login-container">
     <img src="https://cdn.discordapp.com/emojis/1164512483357241396.webp?size=240&quality=lossless" alt="Avatar" id="avatar-image">
@@ -223,6 +223,8 @@ body.dark-mode button.delete-button:hover {
 <br>
 <div id="currentsongtitle">
 当前歌曲:</div><span id="cs"></span>
+<br>
+<img style="height: 200px" id="thumbnail" src="">
 <br>
 <div class="slidecontainer">
   <input type="range" min="1" max="100" value="50" class="slider" style="width:70%" id="songtimeslider">
@@ -504,6 +506,8 @@ function getCurrentSong() {
       if (responsejson.playing == true){
       document.getElementById("songtimeslider").max = responsejson.duration;
       document.getElementById("songtimeslider").value = (Date.now()-responsejson.starttime)/1000;
+            document.getElementById("thumbnail").src = responsejson.thumbnail;
+
       console.log(responsejson.starttime);
       console.log(Date.now());
       console.log((Date.now()-responsejson.starttime)/1000);}
