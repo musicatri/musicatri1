@@ -1384,11 +1384,10 @@ async def fix(ctx):
 
 @atri.command()
 async def status(ctx):
-    await ctx.send("亚托莉目前加入了"+str(len(atri.guilds))+"个服务器哦")
+    await ctx.send("亚托莉目前加入了"+str(len(atri.guilds))+"个服务器")
     await ctx.send("已连接到"+str(len(players))+"个语音频道")
     await ctx.send("有"+str(len(langpref.keys()))+"个人使用过亚托莉")
     await ctx.send("正在播放"+str(len(cs.keys()))+"首歌曲")
-    await ctx.send("有"+str(len(queues.keys()))+"个播放列表")
     await ctx.send("有"+str(len(plays.keys()))+"首歌曲被播放过")
 @tasks.loop(seconds=11451 if not key["devmode"] else 15  )
 async def writeplays():
