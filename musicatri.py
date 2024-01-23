@@ -658,7 +658,7 @@ async def addtoqueue163(ctx, id):
 def ckqueue(guild, uselessd, uselessd2=None):
     try:
         if guild.id not in queues or not queues[guild.id]:
-            cs[guild.id] = False
+            cs.pop(guild.id)
             return
         id = list(queues[guild.id].keys())[0]
         cs[guild.id] = [id,queues[guild.id][id][1]["thumbnail"]]
@@ -669,7 +669,7 @@ def ckqueue(guild, uselessd, uselessd2=None):
         add1play(song[1]["title"])
     except Exception as e:
         print(traceback.format_exc())
-        cs[guild.id] = False
+        cs.pop(guild.id)
 
 
 @atri.event
@@ -1382,6 +1382,14 @@ async def fix(ctx):
 
     await ctx.send(replacetrans("developer_notified",ctx.author.id))
 
+@atri.command()
+async def status(ctx):
+    await ctx.send("亚托莉目前加入了"+str(len(atri.guilds))+"个服务器哦")
+    await ctx.send("已连接到"+str(len(players))+"个语音频道")
+    await ctx.send("有"+str(len(langpref.keys()))+"个人使用过亚托莉")
+    await ctx.send("正在播放"+str(len(cs.keys()))+"首歌曲")
+    await ctx.send("有"+str(len(queues.keys()))+"个播放列表")
+    await ctx.send("有"+str(len(plays.keys()))+"首歌曲被播放过")
 @tasks.loop(seconds=11451 if not key["devmode"] else 15  )
 async def writeplays():
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
