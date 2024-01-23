@@ -1388,7 +1388,7 @@ async def status(ctx):
     await ctx.send("已连接到"+str(len(players))+"个语音频道")
     await ctx.send("有"+str(len(langpref.keys()))+"个人使用过亚托莉")
     await ctx.send("正在播放"+str(len(cs.keys()))+"首歌曲")
-    await ctx.send("有"+str(len(plays.keys()))+"首歌曲被播放过")
+    await ctx.send("播放过"+str(len(plays.keys()))+"首歌曲（不重复计算）")
 @tasks.loop(seconds=11451 if not key["devmode"] else 15  )
 async def writeplays():
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
