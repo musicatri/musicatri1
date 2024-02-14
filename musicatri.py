@@ -391,7 +391,9 @@ def changesongstate():
         return "请先登录喵~"
 @app.route('/songctl',methods = ['GET'])
 def songctl():
+    print("收到来自"+request.remote_addr+"的新请求喵~")
     return send_file(dirpath+"website/songctl.html")
+
 @app.route('/<path:path>')
 def send_report(path):
     return send_from_directory('website', path)
