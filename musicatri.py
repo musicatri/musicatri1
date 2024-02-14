@@ -11,12 +11,12 @@ from urllib.parse import quote
 dirpath = dirname(realpath(__file__)) + "/"
 with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     # aaa=r.read().encode().decode('utf-8-sig') win7 workaround
-    key = json.loads(r.read())
+    key = json.loads(r.read())["instances"][1]
     name = key["name"]
     print("主人我的云控制链接是"+key["songctladdr"])
 if not key["devmode"]:
-    if "custom163apiserver" in key.keys():
-        cloudmusicapiurl = key["custom163apiserver"]
+    if key["NeteaseCloudMusicApiUseExisting"]:
+        cloudmusicapiurl = key["NeteaseCloudMusicApiUseExisting"]
         print("主人，亚托莉已经帮你连接了自定义的网易云音乐API喵~")
     else:
         subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
@@ -55,7 +55,6 @@ from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthor
 import ast
 import asyncio
 import os
-import secrets
 import platform
 import random
 import traceback
