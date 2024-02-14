@@ -206,18 +206,12 @@ body.dark-mode button.delete-button:hover {
   }
 
   </style>
-
 </head>
-<>
-
 <div id="login-container">
     <img src="https://cdn.discordapp.com/emojis/1164512483357241396.webp?size=240&quality=lossless" alt="Avatar" id="avatar-image">
     <div id="username-text">未登录喵~</div>
     <button id="login-button" onclick="loginlink()"  >Login</button>
   </div>
-
-
-
 <h1 ><div id="songctltitle">音乐控制</div>
 </h1>
 <br>
@@ -506,7 +500,11 @@ function getCurrentSong() {
       if (responsejson.playing == true){
       document.getElementById("songtimeslider").max = responsejson.duration;
       document.getElementById("songtimeslider").value = (Date.now()-responsejson.starttime)/1000;
-            document.getElementById("thumbnail").src = responsejson.thumbnail;
+      if (!responsejson.thumbnail){
+        document.getElementById("thumbnail").hidden = true;
+      }else{
+        document.getElementById("thumbnail").hidden = false;
+      document.getElementById("thumbnail").src = responsejson.thumbnail;}
 
       console.log(responsejson.starttime);
       console.log(Date.now());
