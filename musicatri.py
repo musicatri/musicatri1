@@ -11,7 +11,7 @@ from urllib.parse import quote
 dirpath = dirname(realpath(__file__)) + "/"
 with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     # aaa=r.read().encode().decode('utf-8-sig') win7 workaround
-    key = json.loads(r.read())["instances"][1]
+    key = json.loads(r.read())
     name = key["name"]
     print("主人我的云控制链接是"+key["songctladdr"])
 if not key["devmode"]:
