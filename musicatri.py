@@ -509,7 +509,7 @@ def mutisearch(s,t):
 
 def replacetrans(message, userid, *replace):
     userid = str(userid)
-    if userdata.count_documents({"_id": userid}, limit=1) == 0:
+    if not userdata.find_one({"_id": userid})["lang"]
         userdata.find_one_and_update(
             {"_id": userid},
             {"$set": {"lang": "zh.json"}},
