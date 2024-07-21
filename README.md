@@ -10,7 +10,10 @@ There are other small features and easter eggs like vocabulary tests<br>
 <h3>How to Configure:</h3><br>
 0. <code>git clone https://github.com/musicatri/musicatri1.git</code><br>
 1. Run setup.bat/setup.sh.<br>
-2. For Windows, ensure that Chrome/Chromium and ffmpeg are installed, and place the corresponding chromedriver in the musicatri directory to enable Netease Cloud Music search functionality.<br>
+2. install mongodb
+3. create a mongodb database named "musicatri" and  collections named "songdata" and "userdata"
+
+For Windows, ensure that Chrome/Chromium and ffmpeg are installed, and place the corresponding chromedriver in the musicatri directory to enable Netease Cloud Music search functionality.<br>
 Note: setup.sh will only automatically install ffmpeg and chromium on systems that use apt (e.g., Debian/Ubuntu). For other systems, please install them manually (e.g., Arch/Fedora).<br>
 
 <h3>TODO:</h3><br>

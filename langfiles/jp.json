@@ -66,5 +66,6 @@
     "atri_cleaning": "ご主人様、お部屋を掃除中にゃ〜",
     "atri_cleaning_finished": "お部屋がピカピカになりましたよ、ご主人様、にゃ〜",
     "select_song": "曲を選んでください（曲の前の番号を送信すればいい,キャンセルするには「c」と返信して）",
-    "select_song_cancel": "キャンセルしました"
+    "select_song_cancel": "キャンセルしました",
+    "lang_set": "言語を日本語に設定しました"
   }

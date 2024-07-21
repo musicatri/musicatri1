@@ -14,17 +14,14 @@ with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     key = json.loads(r.read())
     name = key["name"]
     print("主人我的云控制链接是"+key["songctladdr"])
-if not key["devmode"]:
-    if key["NeteaseCloudMusicApiUseExisting"]:
-        cloudmusicapiurl = key["NeteaseCloudMusicApiUseExisting"]
-        print("主人，亚托莉已经帮你连接了自定义的网易云音乐API喵~")
-    else:
-        subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
-        cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
-        print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
+if key["NeteaseCloudMusicApiUseExisting"]:
+    cloudmusicapiurl = key["NeteaseCloudMusicApiUseExisting"]
+    print("主人，亚托莉已经帮你连接了自定义的网易云音乐API喵~")
 else:
-    print("主人，开发者模式以启用")
-    cloudmusicapiurl = 'http://192.168.50.58:3000'
+    subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
+    cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
+    print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
+
 
 if not exists(dirpath + "cookie.txt"):
     while(1):
@@ -72,23 +69,31 @@ import json
 from mutagen.mp3 import MP3
 from waitress import serve
 import aiohttp
+import pymongo
 app = Flask(__name__)
 print("主人，我的工作目录是 "+dirpath+" 喵~")
 #http://musicatrictl.akutan445.com:4949/songctl?id=
 if platform.system() == "Windows":
     cmd("chcp 936")
-with codecs.open(dirpath + "plays.json", encoding="utf-8", mode="r") as c:
-    plays = json.loads(c.read())
-with codecs.open(dirpath + "langpref.json", encoding="utf-8", mode="r") as c:
-    langpref = json.loads(c.read())
-with codecs.open(dirpath + "haogan.json", encoding='utf-8', mode='r') as f:
-    userdata = json.loads(f.read())
-with codecs.open(dirpath + "waifulist.txt", encoding="utf-8", mode="r") as f:
-    waifulist = ast.literal_eval(f.read())
-with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
-    blacklist = json.loads(f.read())
+# with codecs.open(dirpath + "plays.json", encoding="utf-8", mode="r") as c:
+#     plays = json.loads(c.read())
+# with codecs.open(dirpath + "langpref.json", encoding="utf-8", mode="r") as c:
+#     langpref = json.loads(c.read())
+# with codecs.open(dirpath + "haogan.json", encoding='utf-8', mode='r') as f:
+#     userdata = json.loads(f.read())
+# with codecs.open(dirpath + "waifulist.txt", encoding="utf-8", mode="r") as f:
+#     waifulist = ast.literal_eval(f.read())
+# with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
+#     blacklist = json.loads(f.read())
+dbclient=pymongo.MongoClient(key["mongourl"])
+db=dbclient["musicatri"]
+songdata=db["songdata"]
+# langpref=db["langpref"]
+userdata=db["userdata"]
+# waifulist=db["waifulist"]
+# blacklist=db["blacklist"]
 
-app.secret_key = "asdfasdfasdlf"  # Replace with a secure secret key
+app.secret_key = "asfsaghfdghrsghertyh"  # Replace with a secure secret key
 #if key["devmode"]: bad idea
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
 # Discord OAuth2 configuration
@@ -297,8 +302,8 @@ async def requestnewsong():
                     players[guildid].play(vid[0], after=partial(ckqueue, guild))
                     cstarttime[guildid]=int(time.time()*1000)
 
-                    add1play(vid[1]["title"])
-                    return "正在播放："+vid[1]["title"]
+                    add1play(vid[1]["url"])
+                    return "正在播放："+vid[1]["url"]
             else:
                 if id:
                     a=await dl163ali(id)
@@ -309,12 +314,12 @@ async def requestnewsong():
                     try:
                         if songandartname in queues[guildid].keys():
                             songandartname=songandartname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False}]
+                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
                         else:
-                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False}]
+                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
                     except Exception as e:
                         queues[guildid] = {}
-                        queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False}]
+                        queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
                     songduration[songandartname]=getmp3duration(file)
 
                     return songandartname+"已添加到播放列表"
@@ -399,20 +404,36 @@ def send_report(path):
 
 
 async def getsongdetails(id):
-    if exists(dirpath + "./datacache/" + id):
-        with codecs.open(dirpath + "./datacache/" + id, encoding='utf-8', mode='r') as f:
-            return json.loads(f.read())
+    # if exists(dirpath + "./datacache/" + id):
+    #     with codecs.open(dirpath + "./datacache/" + id, encoding='utf-8', mode='r') as f:
+    #         return json.loads(f.read())
+    # else:
+    #     async with aiohttp.ClientSession() as session:
+    #         async with session.get("http://music.163.com/api/song/detail/?id="+id+"&ids=%5B"+id+"%5D") as resp:
+    #             results = await resp.json(content_type=None)
+    #             results=results["songs"][0]
+    #             with codecs.open(dirpath + "./datacache/" + id, encoding='utf-8', mode='w') as f:
+    #                 f.write(json.dumps(results))
+    #             return results
+    a=songdata.find_one({"_id": id})
+
+    if a:
+        return a
     else:
+        print("cache miss")
         async with aiohttp.ClientSession() as session:
             async with session.get("http://music.163.com/api/song/detail/?id="+id+"&ids=%5B"+id+"%5D") as resp:
                 results = await resp.json(content_type=None)
                 results=results["songs"][0]
-                with codecs.open(dirpath + "./datacache/" + id, encoding='utf-8', mode='w') as f:
-                    f.write(json.dumps(results))
+                results["_id"]=str(results["id"])
+                results["title"] = results.pop("name")
+                results["type"] = "163"
+                results["orgin"] = "directquery"
+                songdata.insert_one(results)
                 return results
 async def getsongname(id):
     a=await getsongdetails(id)
-    return a["name"]
+    return a["title"]
 async def getsongartists(id):
     art = await getsongdetails(id)
     art=art["artists"]
@@ -423,11 +444,22 @@ async def searchsong(sn):
             results = await resp.json()
             if results["result"]['songCount'] == 0:
                 return -1
-            id = tuple(results["result"]["songs"])
+            id = results["result"]["songs"]
+            nid=[]
             for i in id:
-                with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
-                    f.write(json.dumps(i))
-            return id
+                i["title"] = i.pop("name")
+                i["_id"] = str(i["id"])
+                i["type"] = "163"
+                i["orgin"] = ("searchresul"
+                              "tcache")
+                if songdata.count_documents({"_id": i["_id"]}, limit=1) == 0:
+                    #doc not exist
+                    # with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
+                    #     f.write(json.dumps(i))
+
+                    songdata.insert_one(i)
+                nid.append(i)
+            return tuple(nid)
 
 async def getplaylist(sn):
     async with aiohttp.ClientSession() as session:
@@ -435,10 +467,13 @@ async def getplaylist(sn):
             results = await resp.json()
             id =results["songs"]
             for i in id:
-                with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
-                    i["artists"]=i.pop("ar")
-                    i["album"] = i.pop("al")
-                    f.write(json.dumps(i))
+                i["artists"]=i.pop("ar")
+                i["album"] = i.pop("al")
+                i["_id"]=str(i["id"])
+                i["title"] = i.pop("name")
+                i["type"]="163"
+                i["orgin"]="playlistresultcache"
+                songdata.insert_one(i)
 
             nl = []
             for i in id:
@@ -450,11 +485,13 @@ async def getalbum(sn):
             results = await resp.json()
             id =results["songs"]
             for i in id:
-                with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
-                    i["artists"]=i.pop("ar")
-                    i["album"] = i.pop("al")
-                    f.write(json.dumps(i))
-
+                i["artists"]=i.pop("ar")
+                i["album"] = i.pop("al")
+                i["_id"]=i["id"]
+                i["title"] = i.pop("name")
+                i["type"]="163"
+                i["orgin"]="albumresultcache"
+                songdata.insert_one(i)
             nl = []
             for i in id:
                 nl.append(str(i['id']))
@@ -472,10 +509,14 @@ def mutisearch(s,t):
 
 def replacetrans(message, userid, *replace):
     userid = str(userid)
-    if userid not in langpref:
-        langpref[userid] = "zh.json"
-        default_message = "You have not set a language, defaulting to Chinese Simplified. You can set a language with " + name[0] + "langset."
-        translation = translations[langpref[userid]][message]
+    if userdata.count_documents({"_id": userid}, limit=1) == 0:
+        userdata.find_one_and_update(
+            {"_id": userid},
+            {"$set": {"lang": "zh.json"}},
+            upsert=True
+        )
+        default_message = "You have not set a language, defaulting to Chinese Simplified. You can set a language with " + name[0] + "langset <language>."
+        translation = translations["zh.json"][message]
         if replace:
             if len(replace) > 1:
                 chosen_message = random.choice(translation)
@@ -483,7 +524,7 @@ def replacetrans(message, userid, *replace):
             return default_message + "\n" + translation.replace("%a", replace[0]) if "%a" in translation else default_message + "\n" + translation
         return default_message + "\n" + translation
 
-    translation = translations[langpref[userid]][message]
+    translation = translations[userdata.find_one({"_id":userid})["lang"]][message]
     if replace:
         if len(replace) > 1:
             chosen_message = random.choice(translation)
@@ -520,12 +561,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = asyncio.get_event_loop()
         to_run = partial(ytdl.extract_info, url=search)
         data = await loop.run_in_executor(None, to_run)
-        if key["devmode"]:
-            with open(dirpath + "./ytdltemp/" + data['id'] + ".info.json", "w") as f:
-                f.write(json.dumps(data, sort_keys=True, indent=4))
-
+        # if key["devmode"]:
+        #     with open(dirpath + "./ytdltemp/" + data['id'] + ".info.json", "w") as f:
+        #         f.write(json.dumps(data, sort_keys=True, indent=4))
+           #why it not work
         if 'entries' in data:
             lista=[]
+            #it is a playlist
             for d in data['entries']:
                 source = ytdl.prepare_filename(d)
                 if site=="bili":
@@ -534,6 +576,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
                     d["url"] = "https://www.nicovideo.jp/watch/" + d["webpage_url_basename"]
                 else:
                     d["url"] = d["webpage_url"]
+                d["type"]="youtube"
+                d["orgin"]="youtubeplaylistquery"
+                d["_id"]=d["url"]
+                if songdata.count_documents({"_id": d["url"]}, limit=1) == 0:
+                    songdata.insert_one(d)
                 lista.append([discord.FFmpegPCMAudio(source),d])
             return lista
 
@@ -546,6 +593,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 data["url"] = "https://www.nicovideo.jp/watch/" + data["webpage_url_basename"]
             else:
                 data["url"]=data["webpage_url"]
+            data["type"] = "youtube"
+            data["orgin"] = "youtubedirectlink"
+            data["_id"] = data["url"]
+            if songdata.count_documents({"_id": data["url"]}, limit=1) == 0:
+                songdata.insert_one(data)
             return (discord.FFmpegPCMAudio(source),data)
 
 async def getyt(url):
@@ -553,10 +605,17 @@ async def getyt(url):
     return a
 
 def add1play(id):
-    try:
-        plays[id] = plays[id] + 1
-    except:
-        plays[id] = 1
+    #the input is video or song title
+    songdata.find_one_and_update(
+        {"_id": id},
+        {"$inc": {"play_count": 1}},
+        upsert=True,
+    )
+    # try:
+    #     plays[id] = plays[id] + 1
+    # except:
+    #     plays[id] = 1
+
 
 async def playt(ctx, vid):
     # “a” is the video url
@@ -566,7 +625,7 @@ async def playt(ctx, vid):
     cstarttime[ctx.guild.id]=int(time.time()*1000)
     await ctx.send(    replacetrans("now_playing",ctx.author.id,vid[1]["title"]) )
     await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
-    add1play(vid[1]["title"])
+    add1play(vid[1]["url"])
 
 async def addtoqueueyt(ctx, song):
     if type(song) == type([]):
@@ -667,30 +726,31 @@ def ckqueue(guild, uselessd, uselessd2=None):
         players[guild.id] = discord.utils.get(atri.voice_clients, guild=guild)
         players[guild.id].play(song[0], after=partial(ckqueue, guild))
         cstarttime[guild.id]=int(time.time()*1000)
-        add1play(song[1]["title"])
+        print(song)
+        add1play(song[1]["url"])
     except Exception as e:
         print(traceback.format_exc())
         cs.pop(guild.id)
 
 
-@atri.event
-async def on_member_update(before, after):
-    if str(before.guild.id) == "937939784494612570":
-        if str(before.id) in waifulist:
-            if before.status == after.status:
-                pass
-            else:
-                if before.id in waifucd.keys():
-                    if waifucd[str(before.id)] + 1800 > round(time.time()):
-                        return
-                if str(after.status) == "online" or (str(after.status) == "away" and str(before.status) == "offline"):
-                    await after.send(replacetrans("master_arrive_home_catgirl",before.id,str(after.name),True))
-                    waifucd[str(before.id)] = round(time.time())
-                elif str(after.status) == "offline" or str(after.status) == "away":
-                    await after.send(replacetrans("choice_master_leave",before.id,str(after.name),True))
-                    waifucd[str(before.id)] = round(time.time())
-                else:
-                    pass
+# @atri.event
+# async def on_member_update(before, after):
+#     if str(before.guild.id) == "937939784494612570":
+#         if str(before.id) in waifulist:
+#             if before.status == after.status:
+#                 pass
+#             else:
+#                 if before.id in waifucd.keys():
+#                     if waifucd[str(before.id)] + 1800 > round(time.time()):
+#                         return
+#                 if str(after.status) == "online" or (str(after.status) == "away" and str(before.status) == "offline"):
+#                     await after.send(replacetrans("master_arrive_home_catgirl",before.id,str(after.name),True))
+#                     waifucd[str(before.id)] = round(time.time())
+#                 elif str(after.status) == "offline" or str(after.status) == "away":
+#                     await after.send(replacetrans("choice_master_leave",before.id,str(after.name),True))
+#                     waifucd[str(before.id)] = round(time.time())
+#                 else:
+#                     pass
 
 class chatgpt():
     def __init__(self, channel):
@@ -750,8 +810,14 @@ async def on_message(message):
             except discord.NotFound:
                 pass
         if not askgpt and not message.content.startswith(f"<@{atri_id}>"):
-            if not (str(message.author.id) in blacklist.keys()):
+            if userdata.count_documents({"_id": str(message.author.id)}, limit=1) == 0:
                 await atri.process_commands(message)
+            else:
+                if "blacklist" in userdata.find_one({"_id": str(message.author.id)}).keys() and userdata.find_one({"_id": str(message.author.id)})["blacklist"]:
+                    return
+                else:
+                    await atri.process_commands(message)
+
         else:
             cleanmessage=message.content.replace(f"<@{atri_id}>", "").strip()
             if message.guild.id not in scm.keys():
@@ -767,8 +833,13 @@ async def on_message(message):
                 await gpt.gererateresponse(cleanmessage)
     else:
 
-        if not (str(message.author.id) in blacklist.keys()):
+        if userdata.count_documents({"_id": str(message.author.id)}, limit=1) == 0:
             await atri.process_commands(message)
+        else:
+            if "blacklist" in userdata.find_one({"_id": str(message.author.id)}).keys() and userdata.find_one({"_id": str(message.author.id)})["blacklist"]:
+                return
+            else:
+                await atri.process_commands(message)
 
 @atri.event
 async def on_ready():
@@ -835,31 +906,41 @@ async def dl163ali(id):
 @atri.command(aliases=["封"])
 async def ban(ctx, id, reason=" "):
     if str(ctx.message.author.id) == "834651231871434752":
-        blacklist[str(id)] = reason
-        await ctx.send("ok")
+        userdata.find_one_and_update({"_id":str(id)},{"$set":{"blacklist":True,"blacklistreason":reason}},upsert=True)
 
+        await ctx.send("ok")
 
 @atri.command(aliases=["解封"])
 async def unban(ctx, id):
     if str(ctx.message.author.id) == "834651231871434752":
-        blacklist.pop(str(id))
+        userdata.find_one_and_update({"_id":str(id)},{"$set":{"blacklist":False}},upsert=True)
+
         await ctx.send(replacetrans("master_is_so_kind",ctx.author.id))
 
 @atri.command()
 async def langset(ctx, *lang):
-    global langpref
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     if not lang:
         await ctx.send("available languages:"+str(translations.keys())
                        +"\nalangset <language>\nExample: alangset jp"
                        )
     else:
         if lang[0] in translations.keys() or lang[0]+".json" in translations.keys():
-            langpref[str(ctx.author.id)]=lang[0].replace(".json","")+".json"
+            userdata.find_one_and_update(
+                {"_id": str(ctx.author.id)},
+                {"$set": {"lang": lang[0].replace(".json","")+".json"}},
+                upsert=True
+            )
+            await ctx.send(replacetrans("lang_set",ctx.author.id))
+            #langpref[str(ctx.author.id)]=lang[0].replace(".json","")+".json"
         else:
             await ctx.send("available languages:"+str(translations.keys()))
 
 @atri.command()
 async def spelling(ctx):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     def check(m):
         return m.channel == ctx.channel
 
@@ -934,105 +1015,107 @@ async def spelling(ctx):
             await ctx.send("错误文件：", file=discord.File(file, "err.txt"))
         return
 
-@atri.command(aliases=["すき", "最喜欢了", "喜欢", "爱"])
-async def suki(ctx, *v):
-    user_id = str(ctx.author.id)
-
-    def reset_daily_limits():
-        userdata[user_id]["dailylimits"] = {"pat": 0, "suki": 0, "727": 0}
-
-    def update_haogandu(value):
-        userdata[user_id]["haogandu"] += value
-
-    async def send_message(key, value_change):
-        await ctx.send(replacetrans(key, user_id))
-        update_haogandu(value_change)
-
-    if not v or not v[0].isdigit():
-        await ctx.send(replacetrans("suki_missing_args", user_id))
-        return
-
-    user_data = userdata.get(user_id, {})
-    if user_data.get("dailylimittime") != str(date.today()):
-        reset_daily_limits()
-
-    haogandu = user_data.get("haogandu", 0)
-    daily_limit = user_data.get("dailylimits", {}).get("suki", 0)
-
-    if haogandu >= -20:
-        if daily_limit < 10:
-            if int(v[0]) > 5:
-                await send_message("suki_love", 1)
-            else:
-                await send_message("suki_kirai", -5 if haogandu <= 500 else -400)
-        else:
-            await send_message("suki_atricon", -10 if haogandu <= 500 else 10)
-    else:
-        await send_message("suki_report_police", -20)
-
-    userdata[user_id]["dailylimits"]["suki"] = daily_limit + 1
-
-
-@atri.command(aliases=["摸头"])
-async def pat(ctx):
-    try:
-        if userdata[str(ctx.author.id)]["dailylimittime"] != str(date.today()):
-            userdata[str(ctx.author.id)]["dailylimits"]["pat"] = 0
-            userdata[str(ctx.author.id)]["dailylimits"]["suki"] = 0
-            userdata[str(ctx.author.id)]["dailylimits"]["727"] = 0
-        if not userdata[str(ctx.author.id)]["haogandu"] < 0:
-            if userdata[str(ctx.author.id)]["dailylimits"]["pat"] > 5:
-                await ctx.send("呜~头发都被弄乱了，主人能不能休息一下吗？")
-            if userdata[str(ctx.author.id)]["dailylimits"]["pat"] > 10:
-                await ctx.send("主人怎么一天到晚就只会摸小萝莉的头。难道是萝莉控？？好恶心！")
-                userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 10
-            else:
-                userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] + random.randint(0,
-                                                                                                                    5)
-                await ctx.send("好舒服~最喜欢被主人摸头啦")
-            userdata[str(ctx.author.id)]["dailylimits"]["pat"] = userdata[str(ctx.author.id)]["dailylimits"]["pat"] + 1
-            userdata[str(ctx.author.id)]["dailylimittime"] = str(date.today())
-        else:
-            await ctx.send("救命！！这边有个变态在骚扰我！")
-    except:
-        # print(traceback.format_exc())
-        userdata[str(ctx.author.id)] = {}
-        userdata[str(ctx.author.id)]["dailylimits"] = {}
-        userdata[str(ctx.author.id)]["dailylimits"]["pat"] = 1
-        userdata[str(ctx.author.id)]["dailylimittime"] = str(date.today())
-        userdata[str(ctx.author.id)]["dailylimits"]["suki"] = 0
-        userdata[str(ctx.author.id)]["dailylimits"]["727"] = 0
-        userdata[str(ctx.author.id)]["haogandu"] = random.randint(0, 5)
-        await ctx.send("好舒服~最喜欢被主人摸头啦")
-
-@atri.command(aliases=["誓约"])
-async def marry(ctx):
-    if userdata[str(ctx.author.id)]["haogandu"] < 100:
-        await ctx.send("No no we are friends! friends!")
-    else:
-        await ctx.send("ok")
-        await ctx.author.send("主人来这里！https://discord.gg/x2VMR2uAju")
-        waifulist.append(str(ctx.author.id))
+# @atri.command(aliases=["すき", "最喜欢了", "喜欢", "爱"])
+# async def suki(ctx, *v):
+#     user_id = str(ctx.author.id)
+#
+#     def reset_daily_limits():
+#         userdata[user_id]["dailylimits"] = {"pat": 0, "suki": 0, "727": 0}
+#
+#     def update_haogandu(value):
+#         userdata[user_id]["haogandu"] += value
+#
+#     async def send_message(key, value_change):
+#         await ctx.send(replacetrans(key, user_id))
+#         update_haogandu(value_change)
+#
+#     if not v or not v[0].isdigit():
+#         await ctx.send(replacetrans("suki_missing_args", user_id))
+#         return
+#
+#     user_data = userdata.get(user_id, {})
+#     if user_data.get("dailylimittime") != str(date.today()):
+#         reset_daily_limits()
+#
+#     haogandu = user_data.get("haogandu", 0)
+#     daily_limit = user_data.get("dailylimits", {}).get("suki", 0)
+#
+#     if haogandu >= -20:
+#         if daily_limit < 10:
+#             if int(v[0]) > 5:
+#                 await send_message("suki_love", 1)
+#             else:
+#                 await send_message("suki_kirai", -5 if haogandu <= 500 else -400)
+#         else:
+#             await send_message("suki_atricon", -10 if haogandu <= 500 else 10)
+#     else:
+#         await send_message("suki_report_police", -20)
+#
+#     userdata[user_id]["dailylimits"]["suki"] = daily_limit + 1
+#
+#
+# @atri.command(aliases=["摸头"])
+# async def pat(ctx):
+#     try:
+#         if userdata[str(ctx.author.id)]["dailylimittime"] != str(date.today()):
+#             userdata[str(ctx.author.id)]["dailylimits"]["pat"] = 0
+#             userdata[str(ctx.author.id)]["dailylimits"]["suki"] = 0
+#             userdata[str(ctx.author.id)]["dailylimits"]["727"] = 0
+#         if not userdata[str(ctx.author.id)]["haogandu"] < 0:
+#             if userdata[str(ctx.author.id)]["dailylimits"]["pat"] > 5:
+#                 await ctx.send("呜~头发都被弄乱了，主人能不能休息一下吗？")
+#             if userdata[str(ctx.author.id)]["dailylimits"]["pat"] > 10:
+#                 await ctx.send("主人怎么一天到晚就只会摸小萝莉的头。难道是萝莉控？？好恶心！")
+#                 userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] - 10
+#             else:
+#                 userdata[str(ctx.author.id)]["haogandu"] = userdata[str(ctx.author.id)]["haogandu"] + random.randint(0,
+#                                                                                                                     5)
+#                 await ctx.send("好舒服~最喜欢被主人摸头啦")
+#             userdata[str(ctx.author.id)]["dailylimits"]["pat"] = userdata[str(ctx.author.id)]["dailylimits"]["pat"] + 1
+#             userdata[str(ctx.author.id)]["dailylimittime"] = str(date.today())
+#         else:
+#             await ctx.send("救命！！这边有个变态在骚扰我！")
+#     except:
+#         # print(traceback.format_exc())
+#         userdata[str(ctx.author.id)] = {}
+#         userdata[str(ctx.author.id)]["dailylimits"] = {}
+#         userdata[str(ctx.author.id)]["dailylimits"]["pat"] = 1
+#         userdata[str(ctx.author.id)]["dailylimittime"] = str(date.today())
+#         userdata[str(ctx.author.id)]["dailylimits"]["suki"] = 0
+#         userdata[str(ctx.author.id)]["dailylimits"]["727"] = 0
+#         userdata[str(ctx.author.id)]["haogandu"] = random.randint(0, 5)
+#         await ctx.send("好舒服~最喜欢被主人摸头啦")
+#
+# @atri.command(aliases=["誓约"])
+# async def marry(ctx):
+#     if userdata[str(ctx.author.id)]["haogandu"] < 100:
+#         await ctx.send("No no we are friends! friends!")
+#     else:
+#         await ctx.send("ok")
+#         await ctx.author.send("主人来这里！https://discord.gg/x2VMR2uAju")
+#         waifulist.append(str(ctx.author.id))
 
 @atri.command(aliases=["排行榜"])
 async def rankings(ctx):
+    global songdata
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     songtable = PrettyTable()
     songtable.field_names = ["排名","播放次数", "歌手/歌曲名"]
     songtable.align = 'l'
     songtable.set_style(PLAIN_COLUMNS)
     ct = 1
     msg = "```!全dc亚托莉放的最多的歌曲前二十!\n"
-    rankedlist= sorted(plays, key=plays.get, reverse=True)[:20]
-
-    for id in rankedlist[:10]:
-        try:
-            int(id)
-            songtable.add_row([ct,  plays[id],str(await getsongartists(id)) + "——" + str(await getsongname(id))])
-            #msg = msg + str(ct) + ".  " +str(await getsongartists(id)) + "——" + str(await getsongname(id))+ " || " + str(plays[id]) + "次播放。\n"
+    #rankedlist= sorted(plays, key=plays.get, reverse=True)[:20]
+    rankedlist = list(songdata.find({"play_count": { "$exists":True,"$ne": 0 }}).sort("play_count", -1).limit(20))
+    for song in rankedlist[:10]:
+        id=song["_id"]
+        #the id is the song data json
+        if song["type"]=="163":
+            songtable.add_row([ct,  song["play_count"],str(await getsongartists(id)) + "——" + str(await getsongname(id))])
             ct = ct + 1
-        except:
-            #msg = msg + str(ct) + ".  " +id+ " || " + str(plays[id]) + "次播放。\n"
-            songtable.add_row([ct, plays[id], id ])
+        else:
+            songtable.add_row([ct, song["play_count"], id["title"] ])
             ct = ct + 1
     await ctx.send(msg+str(songtable)+"```")
     songtable = PrettyTable()
@@ -1040,15 +1123,15 @@ async def rankings(ctx):
     songtable.align = 'l'
     songtable.set_style(PLAIN_COLUMNS)
     ct = 1
-    for id in rankedlist[10:]:
-        try:
+    #the next 10 songs
+    for song in rankedlist[10:]:
+        id = song["_id"]
+        if song["type"] == "163":
             int(id)
-            songtable.add_row([ct+10, plays[id], str(await getsongartists(id)) + "——" + str(await getsongname(id))])
-            # msg = msg + str(ct) + ".  " +str(await getsongartists(id)) + "——" + str(await getsongname(id))+ " || " + str(plays[id]) + "次播放。\n"
+            songtable.add_row([ct+10, song["play_count"], str(await getsongartists(id)) + "——" + str(await getsongname(id))])
             ct = ct + 1
-        except:
-            # msg = msg + str(ct) + ".  " +id+ " || " + str(plays[id]) + "次播放。\n"
-            songtable.add_row([ct+10, plays[id], id])
+        else:
+            songtable.add_row([ct+10, id["play_count"] , id["title"]])
             ct = ct + 1
     await ctx.send("```" + str(songtable) + "```")
 
@@ -1064,7 +1147,7 @@ async def songchoice(ctx,xuanze):
     msg=""
     for x in range(len(xuanze)):
         cr=xuanze[x]
-        msg = msg + str(x) + ".  " + str(artistslistpurifier(cr['artists'])) + "——" + cr["name"] +"\n"
+        msg = msg + str(x) + ".  " + str(artistslistpurifier(cr['artists'])) + "——" + cr["title"] +"\n"
     await ctx.send(msg)
     selection = await atri.wait_for('message',check=check )
     selection=selection.content
@@ -1078,7 +1161,8 @@ async def songchoice(ctx,xuanze):
 
 @atri.command(aliases=["播放", "queue", "播放列表"])
 async def play(ctx, *a):
-
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     try:
         if a:
             if ctx.author.voice:
@@ -1199,6 +1283,8 @@ def pausesong(guildid):
 
 @atri.command(aliases=["断开"])
 async def disconnect(ctx, *a):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
     if players[ctx.guild.id]:
         await players[ctx.guild.id].disconnect()
@@ -1206,8 +1292,11 @@ async def disconnect(ctx, *a):
         await ctx.send(replacetrans("bye",ctx.author.id))
     else:
         await ctx.send(replacetrans("bye_mad",ctx.author.id))
+
 @atri.command(aliases=["连接"])
 async def connect(ctx, *a):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     if ctx.author.voice:
         if ctx.guild.id in players.keys():
             if not players[ctx.guild.id].is_playing():
@@ -1223,8 +1312,11 @@ async def connect(ctx, *a):
     else:
         await ctx.send(replacetrans("error_not_connected",ctx.author.id))
 
+
 @atri.command(aliases=["数数"])
 async def count(ctx, *v):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     if ctx.author.voice:
         await ctx.message.author.voice.channel.connect()
         players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
@@ -1234,6 +1326,8 @@ async def count(ctx, *v):
 
 @atri.command(aliases=["劈瓜", "gua"])
 async def pigua(ctx, *v):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     if ctx.author.voice:
         await ctx.message.author.voice.channel.connect()
         players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
@@ -1244,6 +1338,8 @@ async def pigua(ctx, *v):
 @atri.command(aliases=["gomenasai", "对不起", "本当にごめんなさい", "ほんどにごめなさい"])
 async def sorry(ctx, *v):
     "特殊需求652615081682796549"
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     try:
         if ctx.message.author.voice:
             for m in ctx.message.author.voice.channel.members:
@@ -1279,6 +1375,8 @@ async def sorry(ctx, *v):
 
 @atri.command(aliases=["暂停","resume","继续"])
 async def pause(ctx, *a):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
     if players[ctx.guild.id]:
         if players[ctx.guild.id].is_playing():
@@ -1292,6 +1390,8 @@ async def pause(ctx, *a):
 
 @atri.command(aliases=["停"])
 async def stop(ctx, *a):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
     if players[ctx.guild.id]:
         players[ctx.guild.id].stop()
@@ -1301,6 +1401,8 @@ async def stop(ctx, *a):
 
 @atri.command(aliases=["跳过", "下一首"])
 async def skip(ctx, a=1):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
     if players[ctx.guild.id]:
         try:
@@ -1317,63 +1419,40 @@ async def skip(ctx, a=1):
     else:
         await ctx.send(replacetrans("not_conneted_skip",ctx.author.id))
 
-@atri.command()
-async def level(ctx, *a):
-    await ctx.send(userdata[str(ctx.author.id)]["haogandu"])
-
+# @atri.command()
+# async def level(ctx, *a):
+#     await ctx.send(userdata[str(ctx.author.id)]["haogandu"])
+#
 
 
 @atri.command()
 async def stopadding(ctx):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     adding[ctx.guild.id] = False
     await ctx.send("ok")
 @atri.command()
 async def help(ctx):
-    await ctx.send("""
-    A. """+name[0]+"""play <YouTube/Bilibili video/playlist url,NetEase Cloud Music Link/Playlist/Search Keyword >
-        Join a voice channel and play the specified song. If a search keyword is provided, it will search for the keyword on NetEase Cloud Music and play the first result.
-        If music is already playing, add the song to the playlist.
-        If no specific song is specified, return the playlist.
-
-    B. """+name[0]+"""pause
-
-        Pause the current song.
-
-    C. """+name[0]+"""continue
-
-        Resume playing if the current song is paused.
-
-    D. """+name[0]+"""currentsong
-
-        return the name of the song that is currently playing
-
-    G. """+name[0]+"""skip
-
-        Skip the current song
-
-    H. """+name[0]+"""stop
-
-        Stop playback
-
-    I. """+name[0]+"""connect
-
-        Join to the voice channel
-
-    J. """+name[0]+"""disconnect
-
-        leave the voice channel
-        """)
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
+    await ctx.send(key["songctlhost"]+"/help.html")
 @atri.command()
 async def clearqueue(ctx):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     await ctx.send("ok")
     queues[ctx.guild.id] = {}
 
 @atri.command(aliases=["当前歌曲", "cs"])
 async def currentsong(ctx, *a):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     if cs[ctx.guild.id]:
         await ctx.send(replacetrans("now_playing",ctx.author.id,cs[ctx.guild.id][0]))
 @atri.command()
 async def fix(ctx):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     user=await atri.fetch_user(834651231871434752)
     efn=dirpath + "./err"+str(round(time.time()))+".txt"
     with codecs.open(efn, encoding='utf-8', mode='w') as file:
@@ -1385,27 +1464,25 @@ async def fix(ctx):
 
 @atri.command()
 async def status(ctx):
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
     await ctx.send("亚托莉目前加入了"+str(len(atri.guilds))+"个服务器")
     await ctx.send("已连接到"+str(len(players))+"个语音频道")
-    await ctx.send("有"+str(len(langpref.keys()))+"个人使用过亚托莉")
+    await ctx.send("有"+str(userdata.count_documents())+"个人使用过亚托莉")
     await ctx.send("正在播放"+str(len(cs.keys()))+"首歌曲")
-    await ctx.send("播放过"+str(len(plays.keys()))+"首歌曲（不重复计算）")
+    await ctx.send("播放过"+str(songdata.count_documents({"play_count":{"$exists":True,"$ne": 0}}))+"首歌曲（不重复计算）")
 @tasks.loop(seconds=11451 if not key["devmode"] else 15  )
 async def writeplays():
     await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
-    await asyncio.sleep(5)
-    print("主人我正在保存数据喵~")
-    with codecs.open(dirpath + "./plays.json", encoding='utf-8', mode='w') as f:
-        f.write(json.dumps(plays))
-    with codecs.open(dirpath + "./haogan.json", encoding='utf-8', mode='w') as f:
-        f.write(json.dumps(userdata))
-    with codecs.open(dirpath + "./waifulist.txt", encoding='utf-8', mode='w') as f:
-        f.write(str(waifulist))
-    with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="w") as f:
-        f.write(json.dumps(blacklist))
-    with codecs.open(dirpath + "langpref.json", encoding="utf-8", mode="w") as f:
-        f.write(json.dumps(langpref))
-    print("数据保存完毕，大家的信息我已经完美的记录下来的喵~")
+    #await asyncio.sleep(5)
+    #print("主人我正在保存数据喵~")
+    # with codecs.open(dirpath + "./haogan.json", encoding='utf-8', mode='w') as f:
+    #     f.write(json.dumps(userdata))
+    # with codecs.open(dirpath + "./waifulist.txt", encoding='utf-8', mode='w') as f:
+    #     f.write(str(waifulist))
+    # with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="w") as f:
+    #     f.write(json.dumps(blacklist))
+    #print("数据保存完毕，大家的信息我已经完美的记录下来的喵~")
     # print("主人我正在打扫房间~")
     # # for f in os.listdir(dirpath+"ytdltemp"):
     # #     os.remove(os.path.join(dirpath+"ytdltemp", f))

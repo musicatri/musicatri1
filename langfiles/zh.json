@@ -65,5 +65,7 @@
 "atri_cleaning":"主人我正在打扫房间~",
 "atri_cleaning_finished":"主人，房间已经清扫的干干净净了喵~",
 "select_song":"请选择歌曲（输入歌曲前面的数字即可, 回复c取消）",
-"select_song_cancel":"取消播放"
+"select_song_cancel":"取消播放",
+  "lang_set":"语言设置为中文",
+  "help":""
 }

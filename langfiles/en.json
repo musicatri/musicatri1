@@ -66,5 +66,6 @@
 "atri_cleaning": "Master, I'm cleaning the room~",
 "atri_cleaning_finished": "Master, the room is spotlessly clean now, meow~",
 "select_song": "Select a song (enter the number in front of the song, respond c to cancel):",
-"select_song_cancel":"playback cancelled"
+"select_song_cancel":"playback cancelled",
+  "lang_set": "Language set to English"
 }

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第四代人形机器人【亚托莉】使用说明书</title>
+    <style>
+         body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        .command {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f9f9f9;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .command p {
+            margin: 0;
+            flex-grow: 1;
+            color: #555;
+        }
+        .copy-btn {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .copy-btn:hover {
+            background-color: #45a049;
+        }
+        .copy-btn.copied {
+            background-color: #ff1744;
+
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>第四代人形机器人【亚托莉】使用说明书</h1>
+
+        <div class="command">
+            <p>aplay &lt;YouTube/Bilibili 视频/播放列表链接，网易云音乐链接/播放列表/搜索关键词&gt;</p>
+            <button class="copy-btn" onclick="copyToClipboard(this,'aplay <YouTube/Bilibili 视频/播放列表链接，网易云音乐链接/播放列表/搜索关键词>')">复制</button>
+        </div>
+        <p>让亚托莉加入语音频道并播放指定的歌曲。如果提供了搜索关键词，将在网易云音乐上搜索该关键词并且提示用户使用数字选择歌曲。如果目前有歌曲在播放的话亚托莉会将歌曲添加到播放列表。</p>
+
+        <div class="command">
+            <p>apause</p>
+            <button class="copy-btn" onclick="copyToClipboard(this,'apause')">复制</button>
+        </div>
+        <p>暂停当前歌曲。</p>
+
+        <div class="command">
+            <p>aresume</p>
+            <button class="copy-btn" onclick="copyToClipboard(this,'aresume')">复制</button>
+        </div>
+        <p>继续播放已暂停的歌曲。</p>
+
+        <div class="command">
+            <p>acurrentsong</p>
+            <button class="copy-btn" onclick="copyToClipboard(this,'acurrentsong')">复制</button>
+        </div>
+        <p>返回当前播放的歌曲名称。</p>
+
+        <div class="command">
+            <p>askip</p>
+            <button class="copy-btn" onclick="copyToClipboard(this,'askip')">复制</button>
+        </div>
+        <p>跳过当前歌曲。</p>
+
+        <div class="command">
+            <p>astop</p>
+            <button class="copy-btn" onclick="copyToClipboard(this,'astop')">复制</button>
+        </div>
+        <p>停止播放。</p>
+
+        <div class="command">
+            <p>aconnect</p>
+            <button class="copy-btn" onclick="copyToClipboard(this,'aconnect')">复制</button>
+        </div>
+        <p>加入语音频道。</p>
+
+        <div class="command">
+            <p>adisconnect</p>
+            <button class="copy-btn" onclick="copyToClipboard(this,'adisconnect')">复制</button>
+        </div>
+        <p>离开语音频道。</p>
+    </div>
+
+    <script>
+        function copyToClipboard(button, text) {
+            navigator.clipboard.writeText(text).then(function() {
+                button.classList.add('copied');
+                setTimeout(function() {
+                    button.classList.remove('copied');
+                }, 500);
+            }, function(err) {
+                console.error('复制失败: ', err);
+            });
+        }
+    </script>
+</body>
+<footer>
+    版权所有© 2072 株式会社山崎制造
+</footer>
+</html>
