@@ -580,6 +580,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 d["type"]="youtube"
                 d["orgin"]="youtubeplaylistquery"
                 d["_id"]=d["url"]
+                d.pop("requested_downloads")
                 if songdata.count_documents({"_id": d["url"]}, limit=1) == 0:
                     songdata.insert_one(d)
                 lista.append([discord.FFmpegPCMAudio(source),d])
@@ -1166,26 +1167,17 @@ async def play(ctx, *a):
     try:
         if a:
             if ctx.author.voice:
-
-                if ctx.guild.id in players.keys():
-                    if players[ctx.ctx.guild.id] and not players[ctx.guild.id].is_playing():
-                        await players[ctx.guild.id].move_to(ctx.message.author.voice.channel)
-                    else:
-                        players.pop(ctx.guild.id)
-                        await  ctx.message.author.voice.channel.connect()
-                        players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
-
-                else:
+                players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
+                if not players[ctx.guild.id]:
                     await ctx.message.author.voice.channel.connect()
                     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
-
-
                 a =" ".join(a)
                 id = await getsongid(a)
                 if id == -1:
                     return
                 if not players[ctx.guild.id].is_playing():
-
+                    if players[ctx.guild.id].channel != ctx.message.author.voice.channel:
+                        await players[ctx.guild.id].move_to(ctx.message.author.voice.channel)
                     if id:
                         if type(id) == type([]):
                             fid = id.pop(0)
