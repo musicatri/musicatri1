@@ -88,6 +88,7 @@ if platform.system() == "Windows":
 dbclient=pymongo.MongoClient(key["mongourl"])
 db=dbclient["musicatri"]
 songdata=db["songdata"]
+globalconfig=db["globalconfig"]
 # langpref=db["langpref"]
 userdata=db["userdata"]
 # waifulist=db["waifulist"]
@@ -1298,7 +1299,7 @@ async def connect(ctx, *a):
     userdata.find_one_and_update({"_id":str(ctx.author.id)},
                                   {"$inc":{"interactions":1}},upsert=True)
     if ctx.author.voice:
-        if ctx.guild.id in players.keys():
+        if ctx.guild.id in players.keys() and players[ctx.guild.id]:
             if not players[ctx.guild.id].is_playing():
                 await players[ctx.guild.id].move_to(ctx.message.author.voice.channel)
             else:
@@ -1471,9 +1472,14 @@ async def status(ctx):
     await ctx.send("有"+str(userdata.count_documents())+"个人使用过亚托莉")
     await ctx.send("正在播放"+str(len(cs.keys()))+"首歌曲")
     await ctx.send("播放过"+str(songdata.count_documents({"play_count":{"$exists":True,"$ne": 0}}))+"首歌曲（不重复计算）")
-@tasks.loop(seconds=11451 if not key["devmode"] else 15  )
+@tasks.loop(seconds=30 )
 async def writeplays():
-    await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
+    activitymap={"listening":discord.ActivityType.listening,"watching":discord.ActivityType.watching,"playing":discord.ActivityType.playing,"streaming":discord.ActivityType.streaming,"competing":discord.ActivityType.competing}
+    if globalconfig.find_one()["custompresense"]=="":
+        await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
+    else:
+        await atri.change_presence(activity=discord.Activity(type=activitymap[globalconfig.find_one()["activitytype"]],name=globalconfig.find_one()["custompresense"]))
+
     #await asyncio.sleep(5)
     #print("主人我正在保存数据喵~")
     # with codecs.open(dirpath + "./haogan.json", encoding='utf-8', mode='w') as f:
