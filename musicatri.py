@@ -288,7 +288,7 @@ async def requestnewsong():
                         return
                     songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
                     cs[guildid] = [songandartname,False]
-                    file=dirpath + "./songcache/" + id + ".mp3"
+                    file=key["songcachedir"] + id + ".mp3"
                     songduration[songandartname]=getmp3duration(file)
                     players[guildid].play(discord.FFmpegPCMAudio(file), after=partial(ckqueue, guild))
                     cstarttime[guildid]=int(time.time()*1000)
@@ -310,7 +310,7 @@ async def requestnewsong():
                     if not a:
                         return "暂时不支持vip歌曲，ご主人様ごめなさい！！"
                     songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
-                    file=dirpath + "./songcache/" + id + ".mp3"
+                    file=key["songcachedir"] + id + ".mp3"
                     try:
                         if songandartname in queues[guildid].keys():
                             songandartname=songandartname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
@@ -676,7 +676,7 @@ async def addtoqueue163(ctx, id):
                     continue
                 else:
                     songname=str(await getsongartists(i)).replace("[", "").replace("]", "").replace("'","") + "——" + str(await getsongname(i))
-                    file=dirpath + "./songcache/" + i + ".mp3"
+                    file=key["songcachedir"] + i + ".mp3"
                     try:
                         songduration[songname]=getmp3duration(file)
                         try:
@@ -703,7 +703,7 @@ async def addtoqueue163(ctx, id):
             await ctx.send(replacetrans("error_vip_not_supported",ctx.author.id))
             return
         songname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
-        file=dirpath + "./songcache/" + id + ".mp3"
+        file=key["songcachedir"] + id + ".mp3"
         songduration[songname]=getmp3duration(file)
         try:
             if songname in queues[ctx.guild.id].keys():
@@ -889,7 +889,7 @@ async def getsongid(sn):
     return id
 
 async def dl163ali(id):
-    if exists(dirpath + "./songcache/" + id + ".mp3"):
+    if exists(key["songcachedir"] + id + ".mp3"):
         return True
     #/song/url/v1?id=33894312&level=exhigh
     async with aiohttp.ClientSession() as session:
@@ -899,7 +899,7 @@ async def dl163ali(id):
             async with aiohttp.ClientSession() as session:
                 async with session.get(results["data"][0]["url"]) as resp:
                     if resp.status == 200:
-                        f = await aiofiles.open(dirpath + "./songcache/" + id + ".mp3", "wb")
+                        f = await aiofiles.open(key["songcachedir"] + id + ".mp3", "wb")
                         await f.write(await resp.read())
                         await f.close()
                         return True
@@ -1266,7 +1266,7 @@ async def play163(ctx, id):
         return
     songname=str(await getsongartists(id)) + "——" + str(await getsongname(id))
     cs[ctx.guild.id] = [songname,False]
-    file=dirpath + "./songcache/" + id + ".mp3"
+    file=key["songcachedir"] + id + ".mp3"
     songduration[songname]=getmp3duration(file)
     players[ctx.guild.id].play(discord.FFmpegPCMAudio(file), after=partial(ckqueue, ctx.guild))
     cstarttime[ctx.guild.id]=int(time.time()*1000)
