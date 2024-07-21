@@ -1111,12 +1111,11 @@ async def rankings(ctx):
     rankedlist = list(songdata.find({"play_count": { "$exists":True,"$ne": 0 }}).sort("play_count", -1).limit(20))
     for song in rankedlist[:10]:
         id=song["_id"]
-        #the id is the song data json
         if song["type"]=="163":
             songtable.add_row([ct,  song["play_count"],str(await getsongartists(id)) + "——" + str(await getsongname(id))])
             ct = ct + 1
         else:
-            songtable.add_row([ct, song["play_count"], id["title"] ])
+            songtable.add_row([ct, song["play_count"], song["title"] ])
             ct = ct + 1
     await ctx.send(msg+str(songtable)+"```")
     songtable = PrettyTable()
@@ -1132,7 +1131,7 @@ async def rankings(ctx):
             songtable.add_row([ct+10, song["play_count"], str(await getsongartists(id)) + "——" + str(await getsongname(id))])
             ct = ct + 1
         else:
-            songtable.add_row([ct+10, id["play_count"] , id["title"]])
+            songtable.add_row([ct+10, song["play_count"] , song["title"]])
             ct = ct + 1
     await ctx.send("```" + str(songtable) + "```")
 
@@ -1167,17 +1166,26 @@ async def play(ctx, *a):
     try:
         if a:
             if ctx.author.voice:
-                players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
-                if not players[ctx.guild.id]:
+
+                if ctx.guild.id in players.keys():
+                    if players[ctx.ctx.guild.id] and not players[ctx.guild.id].is_playing():
+                        await players[ctx.guild.id].move_to(ctx.message.author.voice.channel)
+                    else:
+                        players.pop(ctx.guild.id)
+                        await  ctx.message.author.voice.channel.connect()
+                        players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
+
+                else:
                     await ctx.message.author.voice.channel.connect()
                     players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
+
+
                 a =" ".join(a)
                 id = await getsongid(a)
                 if id == -1:
                     return
                 if not players[ctx.guild.id].is_playing():
-                    if players[ctx.guild.id].channel != ctx.message.author.voice.channel:
-                        await players[ctx.guild.id].move_to(ctx.message.author.voice.channel)
+
                     if id:
                         if type(id) == type([]):
                             fid = id.pop(0)
@@ -1299,11 +1307,16 @@ async def connect(ctx, *a):
     userdata.find_one_and_update({"_id":str(ctx.author.id)},
                                   {"$inc":{"interactions":1}},upsert=True)
     if ctx.author.voice:
-        if ctx.guild.id in players.keys() and players[ctx.guild.id]:
-            if not players[ctx.guild.id].is_playing():
+        if ctx.guild.id in players.keys():
+            if players[ctx.ctx.guild.id] and  not players[ctx.guild.id].is_playing():
                 await players[ctx.guild.id].move_to(ctx.message.author.voice.channel)
             else:
-                await ctx.send('no')
+                players.pop(ctx.guild.id)
+                await  ctx.message.author.voice.channel.connect()
+                players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
+                await ctx.send(replacetrans("connect", ctx.author.id))
+                await ctx.send(
+                    replacetrans("show_web_address_user", ctx.author.id, key["songctladdr"] + str(ctx.guild.id)))
         else:
             await ctx.message.author.voice.channel.connect()
             players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
@@ -1469,9 +1482,9 @@ async def status(ctx):
                                   {"$inc":{"interactions":1}},upsert=True)
     await ctx.send("亚托莉目前加入了"+str(len(atri.guilds))+"个服务器")
     await ctx.send("已连接到"+str(len(players))+"个语音频道")
-    await ctx.send("有"+str(userdata.count_documents())+"个人使用过亚托莉")
+    await ctx.send("有"+str(userdata.count_documents({}))+"个人使用过亚托莉")
     await ctx.send("正在播放"+str(len(cs.keys()))+"首歌曲")
-    await ctx.send("播放过"+str(songdata.count_documents({"play_count":{"$exists":True,"$ne": 0}}))+"首歌曲（不重复计算）")
+    await ctx.send("播放过"+str(songdata.count_documents({"play_count":{"$exists":True,"$ne":0}}))+"首歌曲（不重复计算）")
 @tasks.loop(seconds=30 )
 async def writeplays():
     activitymap={"listening":discord.ActivityType.listening,"watching":discord.ActivityType.watching,"playing":discord.ActivityType.playing,"streaming":discord.ActivityType.streaming,"competing":discord.ActivityType.competing}
