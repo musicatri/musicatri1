@@ -582,7 +582,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 d["_id"]=d["url"]
                 d.pop("requested_downloads")
                 if songdata.count_documents({"_id": d["url"]}, limit=1) == 0:
-                    songdata.insert_one(d)
+                    try:
+                        songdata.insert_one(d)
+                    except:
+                        print(d)
                 lista.append([discord.FFmpegPCMAudio(source),d])
             return lista
 
