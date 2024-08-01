@@ -601,8 +601,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
             data["type"] = "youtube"
             data["orgin"] = "youtubedirectlink"
             data["_id"] = data["url"]
+            data.pop("requested_downloads")
+
             if songdata.count_documents({"_id": data["url"]}, limit=1) == 0:
-                songdata.insert_one(data)
+                try:
+                    songdata.insert_one(data)
+                except:
+                    print(data)
             return (discord.FFmpegPCMAudio(source),data)
 
 async def getyt(url):
