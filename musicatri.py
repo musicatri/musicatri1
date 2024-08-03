@@ -531,6 +531,8 @@ def replacetrans(message, userid, *replace):
             chosen_message = random.choice(translation)
             return chosen_message.replace("%a", replace[0]) if "%a" in chosen_message else chosen_message
         return translation.replace("%a", replace[0]) if "%a" in translation else translation
+
+
     return translation
 
 
@@ -1253,6 +1255,11 @@ async def play(ctx, *a):
                     #print(e)
                     await ctx.send(replacetrans("no_songs",str(ctx.author.id)))
                 #print(str(queues))
+        tagetauthordata=userdata.find_one({"_id": str(ctx.author.id)})
+        if tagetauthordata["interactions"]>40 and "begged" in tagetauthordata:
+            await ctx.author.send("你好，亚托莉已经和你互动了超过40次了，请务必考虑支持亚托莉的运行和开发喵~ "+key["songctlhost"]+"/support.jpg")
+            userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$set":{"begged":True}},upsert=True)
     except Exception as e:
 
         if key["devmode"]:

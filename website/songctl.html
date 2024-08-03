@@ -303,7 +303,19 @@ fetch(url+'/requestnewsong', {
   </select>
 </div>
 
+<footer>
+         <h2>喜欢musicatri的话请考虑捐赠！</h2>
+  <div class="toggle-container" style="justify-content: center">
+  <span class="toggle-label" style="color:white">显示捐赠页面</span>
+  <label class="toggle-switch">
+    <input type="checkbox" id="donateToggle">
+    <span class="toggle-slider"></span>
+  </label>
+</div>
 
+<div id="donate" >
+<img src="support.jpg" width="40%">
+</div>
   <script>
       var logedin;
       function updateProfile(){
@@ -338,51 +350,7 @@ function loginlink(){
     }
 }
 
-function toggleDarkMode() {
-  const body = document.querySelector("body");
-  const isDarkMode = body.classList.toggle("dark-mode");
-  localStorage.setItem("darkMode", isDarkMode);
-}
 
-function checkOSDarkModePreference() {
-  const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const body = document.querySelector("body");
-  body.classList.toggle("dark-mode", prefersDarkMode);
-  const darkModeToggle = document.getElementById("darkModeToggle");
-  darkModeToggle.checked = prefersDarkMode;
-  localStorage.setItem("darkMode", prefersDarkMode);
-}
-
-function initializeDarkMode() {
-  const storedDarkMode = localStorage.getItem("darkMode");
-
-  if (storedDarkMode !== null) {
-    const body = document.querySelector("body");
-    body.classList.toggle("dark-mode", storedDarkMode === "true");
-    const darkModeToggle = document.getElementById("darkModeToggle");
-    darkModeToggle.checked = storedDarkMode === "true";
-  } else {
-    checkOSDarkModePreference();
-  }
-}
-
-function toggleBackgroundImage() {
-  const body = document.querySelector("body");
-  const isChecked = bgImageToggle.checked;
-  body.classList.toggle("bg-image-active", isChecked);
-  localStorage.setItem("bgImageToggle", isChecked);
-}
-
-function initializeBackgroundImage() {
-  const storedBgImage = localStorage.getItem("bgImageToggle");
-
-  if (storedBgImage !== null) {
-    const body = document.querySelector("body");
-    body.classList.toggle("bg-image-active", storedBgImage === "true");
-    const bgImageToggle = document.getElementById("bgImageToggle");
-    bgImageToggle.checked = storedBgImage === "true";
-  }
-}
 
 function createDeleteButton(guildId, songName) {
   const deleteButton = document.createElement("button");
@@ -514,12 +482,83 @@ function getCurrentSong() {
 }
 
 
+document.addEventListener("DOMContentLoaded", () => {
+  const body = document.body;
+
+  function toggleClass(element, className, condition) {
+    element.classList.toggle(className, condition);
+  }
+
+  function setLocalStorageItem(key, value) {
+    localStorage.setItem(key, value);
+  }
+
+  function getLocalStorageItem(key) {
+    return localStorage.getItem(key);
+  }
+
+  function toggleDarkMode() {
+    const isDarkMode = body.classList.toggle("dark-mode");
+    setLocalStorageItem("darkMode", isDarkMode);
+  }
+
+  function checkOSDarkModePreference() {
+    const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    toggleClass(body, "dark-mode", prefersDarkMode);
+    darkModeToggle.checked = prefersDarkMode;
+    setLocalStorageItem("darkMode", prefersDarkMode);
+  }
+
+  function initializeDarkMode() {
+    const storedDarkMode = getLocalStorageItem("darkMode");
+    if (storedDarkMode !== null) {
+      toggleClass(body, "dark-mode", storedDarkMode === "true");
+      darkModeToggle.checked = storedDarkMode === "true";
+    } else {
+      checkOSDarkModePreference();
+    }
+  }
+
+  function toggleBackgroundImage() {
+    const isChecked = bgImageToggle.checked;
+    toggleClass(body, "bg-image-active", isChecked);
+    setLocalStorageItem("bgImageToggle", isChecked);
+  }
+
+  function initializeBackgroundImage() {
+    const storedBgImage = getLocalStorageItem("bgImageToggle");
+    if (storedBgImage !== null) {
+      toggleClass(body, "bg-image-active", storedBgImage === "true");
+      bgImageToggle.checked = storedBgImage === "true";
+    }
+  }
+
+  function toggleDonate() {
+    const isChecked = donateToggle.checked;
+    document.getElementById("donate").hidden = !isChecked;
+    setLocalStorageItem("donateToggle", isChecked);
+  }
+
+  function initializeDonate() {
+    const storedDonate = getLocalStorageItem("donateToggle");
+    document.getElementById("donate").hidden = storedDonate !== "true";
+    donateToggle.checked = storedDonate === "true";
+  }
+
   const darkModeToggle = document.getElementById("darkModeToggle");
   darkModeToggle.addEventListener("change", toggleDarkMode);
+
   const bgImageToggle = document.getElementById("bgImageToggle");
   bgImageToggle.addEventListener("change", toggleBackgroundImage);
+
+  const donateToggle = document.getElementById("donateToggle");
+  donateToggle.addEventListener("change", toggleDonate);
+
   initializeDarkMode();
   initializeBackgroundImage();
+  initializeDonate();
+});
+
   getQueueFromServer();
   getCurrentSong();
   setInterval(getQueueFromServer, 2000);
@@ -591,7 +630,6 @@ updateContent();
 updateProfile();
   </script>
 </body>
-<footer>
-<a href="https://www.pixiv.net/users/671593/">bg</a>
+
 </footer>
 </html>
