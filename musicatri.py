@@ -8,6 +8,7 @@ import requests
 import time
 from os.path import exists
 from urllib.parse import quote
+cookie = ""
 dirpath = dirname(realpath(__file__)) + "/"
 with codecs.open(dirpath + "atrikey.json", encoding='utf-8', mode='r') as r:
     # aaa=r.read().encode().decode('utf-8-sig') win7 workaround
@@ -18,31 +19,34 @@ if key["NeteaseCloudMusicApiUseExisting"]:
     cloudmusicapiurl = key["NeteaseCloudMusicApiUseExisting"]
     print("主人，亚托莉已经帮你连接了自定义的网易云音乐API喵~")
 else:
-    subprocess.Popen(["node",dirpath+"NeteaseCloudMusicApi/app.js"])
+    subprocess.Popen(["node",dirpath+"neteasecloudmusicapi/app.js"])
     cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
     print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
 
 
-if not exists(dirpath + "cookie.txt"):
-    while(1):
-        try:
-            time.sleep(10)
-            loginres = requests.get(
-                cloudmusicapiurl + "/login/cellphone?phone=" + key["NeteaseCloudMusicUsername"] + "&password=" + key[
-                    "NeteaseCloudMusicPassword"])
-            cookie=quote(loginres.json()['cookie'])
+#if not exists(dirpath + "cookie.txt"):
+#    while(1):
+#        try:
+#            time.sleep(10)
+#            #loginres = requests.get(
+#            #    cloudmusicapiurl + "/login/cellphone?phone=" + key["NeteaseCloudMusicUsername"] + "&password=" + key[
+#            #        "NeteaseCloudMusicPassword"])
+#            requests.get("http://localhost" + key["NeteaseCloudMusicApiPort"] + "/qrlogin.html")
+#
+#            #cookie=quote(loginres.json()['cookie'])
+#
+#            with codecs.open(dirpath + "cookie.txt", encoding='utf-8', mode='w') as f:
+#                f.write(cookie)
+#            print("主人，我已经登录网易云了并且保存了cookie喵~，cookie是" + quote(
+#                loginres.json()['cookie']))
+#            break
+#        except Exception as e:
+#            print(e)
+#            print("主人，我登录网易云失败了喵~，请检查你的账号密码是否正确喵~ 将在十秒种后重试喵~")
+#else:
+#    with codecs.open("cookie.txt", encoding='utf-8', mode='r') as r:
+#        cookie = r.read()
 
-            with codecs.open(dirpath + "cookie.txt", encoding='utf-8', mode='w') as f:
-                f.write(cookie)
-            print("主人，我已经登录网易云了并且保存了cookie喵~，cookie是" + quote(
-                loginres.json()['cookie']))
-            break
-        except Exception as e:
-            print(e)
-            print("主人，我登录网易云失败了喵~，请检查你的账号密码是否正确喵~ 将在十秒种后重试喵~")
-else:
-    with codecs.open("cookie.txt", encoding='utf-8', mode='r') as r:
-        cookie = r.read()
 
 from os import system as cmd
 from prettytable import PrettyTable
@@ -70,7 +74,10 @@ from mutagen.mp3 import MP3
 from waitress import serve
 import aiohttp
 import pymongo
+from flask_cors import CORS
+
 app = Flask(__name__)
+CORS(app)
 print("主人，我的工作目录是 "+dirpath+" 喵~")
 #http://musicatrictl.akutan445.com:4949/songctl?id=
 if platform.system() == "Windows":
@@ -86,6 +93,7 @@ if platform.system() == "Windows":
 # with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
 #     blacklist = json.loads(f.read())
 dbclient=pymongo.MongoClient(key["mongourl"])
+dblist = dbclient.list_database_names()
 db=dbclient["musicatri"]
 songdata=db["songdata"]
 globalconfig=db["globalconfig"]
@@ -93,7 +101,9 @@ globalconfig=db["globalconfig"]
 userdata=db["userdata"]
 # waifulist=db["waifulist"]
 # blacklist=db["blacklist"]
-
+if "musicartri" not in dblist:
+    test_dict = {"custompresense": ""}
+    globalconfig.insert_one(test_dict)
 app.secret_key = "asfsaghfdghrsghertyh"  # Replace with a secure secret key
 #if key["devmode"]: bad idea
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
@@ -148,6 +158,57 @@ songduration={}
 cstarttime={}
 pausetime={}
 
+@app.route('/login/status', methods=['GET'])
+def check_login_status():
+    global cookie
+    COOKIE_FILE = dirpath + "cookie.txt"
+    if os.path.exists(COOKIE_FILE):
+        with open(COOKIE_FILE, 'r') as f:
+            cookie = f.read().strip()
+        if cookie:
+            a = {"logged_in": True, "message": "网易云已登录"}
+    else:
+        a = {"logged_in": False, "message": "网易云未登录"}
+    return json.dumps(a)
+
+@app.route('/login/save_cookie', methods=['POST'])
+def save_cookie():
+    global cookie
+    COOKIE_FILE = dirpath + "cookie.txt"
+    cookie = request.json.get('cookie')
+    if cookie:
+        with open(COOKIE_FILE, 'w') as f:
+            f.write(cookie)
+        a = {"status": "success", "message": "Cookie 已保存"}
+    else:
+        a = {"status": "error", "message": "Cookie 未提供"}
+    return json.dumps(a)
+
+@app.route('/login/qr/key', methods=['GET'])
+async def qr_key():
+    args = request.args.to_dict()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(cloudmusicapiurl + "/login/qr/key?timestamp="+args["timestamp"]) as resp:
+            results = await resp.json()
+            return results
+
+@app.route('/login/qr/create')
+async def qr_create():
+    args = request.args.to_dict()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(cloudmusicapiurl + '/login/qr/create?qrimg=true&key=' + args["key"] + "&timestamp=" + args["timestamp"]) as resp:
+            results = await resp.json()
+            return results
+
+@app.route('/login/qr/check')
+async def qr_check():
+    args = request.args.to_dict()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(cloudmusicapiurl + "/login/qr/check?key=" + args["key"] + "&timestamp=" + args["timestamp"]) as resp:
+            results = await resp.json()
+            return results
+        
+
 @app.route('/profile-test')
 def home():
     user = discordauth.fetch_user()
@@ -189,7 +250,9 @@ def getprofile():
 @app.route('/account/login')
 def login():
     args=request.args.to_dict()
-    return discordauth.create_session(scope=["guilds","identify"],data={"returnguildid":args["id"]})
+    args["id"] = atri.guilds[0].id
+    #args["id"] = atri.fetch_guilds()[0].guildid
+    return discordauth.create_session(scope=["guilds.join","identify"],data={"returnguildid":args["id"]})
 
 
 
@@ -203,7 +266,7 @@ def logout():
 @app.route('/account/callback')
 def callback():
     result=discordauth.callback()
-    return redirect(key["songctladdr"]+result.get('returnguildid'))
+    return redirect(key["songctladdr"]+str(result.get('returnguildid')))
 
 @app.route('/updatesongqueue', methods = ['POST'])
 def updatesongqueue():
@@ -247,18 +310,22 @@ def checkuser(guildid, userid):
             return False
     else:
         #bot not in voice channel
-        guild = atri.get_guild(guildid)
-        requester = guild.get_member(userid)
-        if userid in [member.id for member in requester.voice.channel.members]:
-            return requester.voice.channel
-
-        else:
+        try:
+            guild = atri.get_guild(guildid)
+            requester = guild.get_member(userid)
+            if userid in [member.id for member in requester.voice.channel.members]:
+                return requester.voice.channel
+            else:
+                return False
+        except:
             return False
 workaround=[]
+a = ""
 @app.route('/requestnewsong', methods = ['POST'])
 async def requestnewsong():
-    global workaround
+    global workaround, a
     if discordauth.authorized:
+        #guildid = atri.guilds[0].id
         guildid=int(request.json["guildid"])
         userid=discordauth.fetch_user().id
         checkuserresult=checkuser(guildid, userid)
@@ -276,75 +343,83 @@ async def requestnewsong():
                     await asyncio.sleep(1)
             a=request.json["songname"]
             id = await getsongid(a)
-            if type(id) == type(()):
-                #目前还没有实现网页歌曲选择
-                #默认选取第一手歌
-                id=str(id[0]["id"])
+            #if type(id) == type([]):
+            #    #目前还没有实现网页歌曲选择
+            #    #默认选取第一手歌
+            #    id=str(id[0]["id"])
             if id == -1:
                 return "这是什么歌曲，亚托莉无法播放哦!"
-            if not players[guildid].is_playing():
-                if id:
-                    print(id)
-                    if not await dl163ali(id):
-                        return
-                    songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
-                    cs[guildid] = [songandartname,False]
-                    file=key["songcachedir"] + id + ".mp3"
-                    songduration[songandartname]=getmp3duration(file)
-                    players[guildid].play(discord.FFmpegPCMAudio(file), after=partial(ckqueue, guild))
-                    cstarttime[guildid]=int(time.time()*1000)
-                    add1play(id)
-                    return "正在播放："+songandartname
-                else:
-                    vid = await getyt(a)
-                    cs[guildid] = [vid[1]["title"],vid[1]["thumbnail"]]
-                    songduration[vid[1]["title"]]=vid[1]["duration"]
-
-                    players[guildid].play(vid[0], after=partial(ckqueue, guild))
-                    cstarttime[guildid]=int(time.time()*1000)
-
-                    add1play(vid[1]["url"])
-                    return "正在播放："+vid[1]["url"]
+            if type(id) == type([]):
+                for _id in id:
+                    await playsongbyid(guildid, guild, _id)
+                return "播放一首，剩余加入列表"
             else:
-                if id:
-                    a=await dl163ali(id)
-                    if not a:
-                        return "暂时不支持vip歌曲，ご主人様ごめなさい！！"
-                    songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
-                    file=key["songcachedir"] + id + ".mp3"
-                    try:
-                        if songandartname in queues[guildid].keys():
-                            songandartname=songandartname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
-                        else:
-                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
-                    except Exception as e:
-                        queues[guildid] = {}
-                        queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
-                    songduration[songandartname]=getmp3duration(file)
-
-                    return songandartname+"已添加到播放列表"
-                else:
-                    song = await getyt(a)
-                    try:
-                        if song[1]["title"] in queues[guildid].keys():
-                            newname=song[1]["title"] + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                            songduration[newname]=song[1]["duration"]
-                            queues[guildid][newname] = song
-                        else:
-                            queues[guildid][song[1]["title"]] = song
-                            songduration[song[1]["title"]]=song[1]["duration"]
-                    except:
-                        queues[guildid] = {}
-                        queues[guildid][song[1]["title"]] = song
-                        songduration[song[1]["title"]]=song[1]["duration"]
-                    return song[1]["title"]+"已添加到播放列表"
-            return "ok"
+                return await playsongbyid(guildid, guild, id)
         else:
             print("no connect")
             return "please join the voice channel first"
     else:
         return "请先登录喵~"
+
+async def playsongbyid(guildid, guild, id):
+    global a
+    if not players[guildid].is_playing():
+        if id:
+            print(id)
+            if not await dl163ali(id):
+                return
+            songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
+            songpic = await getsongpic(id)
+            cs[guildid] = [songandartname,songpic]
+            file=key["songcachedir"] + id + ".mp3"
+            songduration[songandartname]=getmp3duration(file)
+            players[guildid].play(discord.FFmpegPCMAudio(file), after=partial(ckqueue, guild))
+            cstarttime[guildid]=int(time.time()*1000)
+            add1play(id)
+            return "正在播放："+songandartname
+        else:
+            vid = await getyt(a)
+            cs[guildid] = [vid[1]["title"],vid[1]["thumbnail"]]
+            songduration[vid[1]["title"]]=vid[1]["duration"]
+            players[guildid].play(vid[0], after=partial(ckqueue, guild))
+            cstarttime[guildid]=int(time.time()*1000)
+            add1play(vid[1]["url"])
+            return "正在播放："+vid[1]["url"]
+    else:
+        if id:
+            a=await dl163ali(id)
+            if not a:
+                return "暂时不支持vip歌曲，ご主人様ごめなさい！！"
+            songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
+            songpic = await getsongpic(id)
+            file=key["songcachedir"] + id + ".mp3"
+            try:
+                if songandartname in queues[guildid].keys():
+                    songandartname=songandartname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
+                    queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":songpic,"type":"163"}]
+                else:
+                    queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":songpic,"type":"163"}]
+            except Exception as e:
+                queues[guildid] = {}
+                queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":songpic,"type":"163"}]
+            songduration[songandartname]=getmp3duration(file)
+            return songandartname+"已添加到播放列表"
+        else:
+            song = await getyt(a)
+            try:
+                if song[1]["title"] in queues[guildid].keys():
+                    newname=song[1]["title"] + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
+                    songduration[newname]=song[1]["duration"]
+                    queues[guildid][newname] = song
+                else:
+                    queues[guildid][song[1]["title"]] = song
+                    songduration[song[1]["title"]]=song[1]["duration"]
+            except:
+                queues[guildid] = {}
+                queues[guildid][song[1]["title"]] = song
+                songduration[song[1]["title"]]=song[1]["duration"]
+            return song[1]["title"]+"已添加到播放列表"
+    return "ok"
 
 @app.route('/getcurrentsong', methods = ['GET'])
 def getcurrentsong():
@@ -439,6 +514,12 @@ async def getsongartists(id):
     art = await getsongdetails(id)
     art=art["artists"]
     return artistslistpurifier(art)
+
+async def getsongpic(id):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(cloudmusicapiurl + "/song/detail?ids="+id) as resp:
+            results = await resp.json()
+            return results["songs"][0]["al"]["picUrl"]
 async def searchsong(sn):
     async with aiohttp.ClientSession() as session:
         async with session.get(cloudmusicapiurl + "/search?keywords="+sn) as resp:
@@ -474,8 +555,8 @@ async def getplaylist(sn):
                 i["title"] = i.pop("name")
                 i["type"]="163"
                 i["orgin"]="playlistresultcache"
-                songdata.insert_one(i)
-
+                if songdata.count_documents({"_id": i["_id"]}, limit=1) == 0:
+                    songdata.insert_one(i)
             nl = []
             for i in id:
                 nl.append(str(i['id']))
@@ -492,7 +573,8 @@ async def getalbum(sn):
                 i["title"] = i.pop("name")
                 i["type"]="163"
                 i["orgin"]="albumresultcache"
-                songdata.insert_one(i)
+                if songdata.count_documents({"_id": i["_id"]}, limit=1) == 0:
+                    songdata.insert_one(i)
             nl = []
             for i in id:
                 nl.append(str(i['id']))
@@ -882,6 +964,15 @@ async def getsongid(sn):
                 # slow
                 sn=sn[listtextl + 8:]
                 return await getplaylist(sn)
+            #listtextl = sn.find("dj?id=")
+            #if listtextl != -1:
+            #    sn = sn[listtextl + 6:]
+            #    if sn.find("&") == -1:
+            #        id = sn
+            #    else:
+            #        id = sn[:sn.find("&")]
+            #    return id
+                
             # reload(search163)
             # slow
             #id = await asyncio.get_event_loop().run_in_executor(None, search163.get_id_and_cache_data, sn)
@@ -1474,7 +1565,7 @@ async def currentsong(ctx, *a):
 async def fix(ctx):
     userdata.find_one_and_update({"_id":str(ctx.author.id)},
                                   {"$inc":{"interactions":1}},upsert=True)
-    user=await atri.fetch_user(834651231871434752)
+    user=await atri.fetch_user(953190878812459019)
     efn=dirpath + "./err"+str(round(time.time()))+".txt"
     with codecs.open(efn, encoding='utf-8', mode='w') as file:
         file.write(str(traceback.format_exc())+"\n\n"+str(cs)+"\n\n"+str(queues)+"\n\n"+str(players))

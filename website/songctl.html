@@ -205,20 +205,49 @@ body.dark-mode button.delete-button:hover {
     background-color: #45a049;
   }
 
+  #qrlogin-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+  }
+
+  #qrLoginButton {
+    padding: 10px;
+    font-size: 14px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  #qrLoginButton:hover {
+    background-color: #45a049;
+  }
+
   </style>
 </head>
 <div id="login-container">
     <img src="https://cdn.discordapp.com/emojis/1164512483357241396.webp?size=240&quality=lossless" alt="Avatar" id="avatar-image">
     <div id="username-text">未登录喵~</div>
-    <button id="login-button" onclick="loginlink()"  >Login</button>
+    <button id="login-button" onclick="loginlink()"  >登录discord</button>
   </div>
+<div id="qrlogin-container">
+  <button id="qrLoginButton" style="display: none;">登录网易云</button>
+</div>
+  
+  <div id="qrContainer"></div>
+
+  
 <h1 ><div id="songctltitle">音乐控制</div>
 </h1>
 <br>
 <div id="currentsongtitle">
 当前歌曲:</div><span id="cs"></span>
 <br>
-<img style="height: 200px" id="thumbnail" src="">
+<img style="height: 200px" id="thumbnail" src="" referrerpolicy="no-referrer">
 <br>
 <div class="slidecontainer">
   <input type="range" min="1" max="100" value="50" class="slider" style="width:70%" id="songtimeslider">
@@ -317,6 +346,99 @@ fetch(url+'/requestnewsong', {
 <img src="support.jpg" width="40%">
 </div>
   <script>
+        // 检查用户是否已登录
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/login/status');
+                const data = await response.json();
+                if (data.logged_in) {
+                    // 已登录，隐藏登录按钮
+                    document.getElementById('qrLoginButton').style.display = 'none';
+                    alert(data.message);  // 显示提示，用户已登录
+                } else {
+                    // 未登录，显示登录按钮
+                    document.getElementById('qrLoginButton').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('检查登录状态出错:', error);
+            }
+        }
+        let timestamp = Date.now()
+        // 登录按钮点击事件
+        document.getElementById("qrLoginButton").addEventListener("click", async () => {
+            try {
+                
+                // 1. 请求二维码 Key
+                const keyResponse = await fetch(`/login/qr/key?timestamp=${Date.now()}`, {
+                    method: 'GET',
+                });
+                const keyData = await keyResponse.json();
+                const key = keyData.data.unikey;
+
+                // 2. 请求二维码并显示
+                const qrResponse = await fetch(`/login/qr/create?key=${key}&qrimg=true&timestamp=${Date.now()}`, {
+                    method: 'GET',
+                });
+                const qrData = await qrResponse.json();
+
+                // 显示二维码图片
+                const qrContainer = document.getElementById("qrContainer");
+                qrContainer.innerHTML = `<img src="${qrData.data.qrimg}" alt="二维码">`;
+
+                // 3. 轮询二维码状态
+                const checkStatus = async () => {
+                    const statusResponse = await fetch(`/login/qr/check?key=${key}&timestamp=${Date.now()}`, {
+                        method: 'GET',
+                    });
+                    const statusData = await statusResponse.json();
+
+                    if (statusData.code === 803) {
+                        alert("登录成功！");
+                        // 获取 Cookie 并保存到后端
+                        const cookie = statusData.cookie;  // 获取二维码 API 返回的 cookies
+                        await saveCookie(cookie);  // 调用保存 Cookie 的函数
+                        // 登录成功后隐藏登录按钮
+                        document.getElementById('qrLoginButton').style.display = 'none';
+                        document.getElementById('qrContainer').style.display = 'none';
+                    } else if (statusData.code === 800) {
+                        alert("二维码已过期");
+                    } else {
+                        // 如果仍在等待扫码或确认，继续轮询
+                        setTimeout(checkStatus, 3000);
+                    }
+
+                    
+                };
+                checkStatus();
+            } catch (err) {
+                console.error("二维码登录流程出错:", err);
+            }
+        });
+
+        // 保存 Cookie 到后端
+        async function saveCookie(cookies) {
+            try {
+                const response = await fetch('/login/save_cookie', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ cookie: cookies })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    console.log("Cookie 保存成功");
+                } else {
+                    console.error("保存 Cookie 出错:", data.message);
+                }
+            } catch (error) {
+                console.error("请求保存 Cookie 出错:", error);
+            }
+        }
+
+        // 页面加载时检查登录状态
+        checkLoginStatus();
+
       var logedin;
       function updateProfile(){
            fetch(url+"/getprofile")
