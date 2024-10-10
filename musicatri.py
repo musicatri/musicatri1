@@ -260,13 +260,15 @@ def login():
 def logout():
     args=request.args.to_dict()
     discordauth.revoke()
-    return redirect(key["songctladdr"]+args["id"])
+    #return redirect(key["songctladdr"]+args["id"])
+    return redirect(request.host_url + 'songctl?id=' + args["id"])
 
 
 @app.route('/account/callback')
 def callback():
     result=discordauth.callback()
-    return redirect(key["songctladdr"]+str(result.get('returnguildid')))
+    #return redirect(key["songctladdr"]+str(result.get('returnguildid')))
+    return redirect(request.host_url + 'songctl?id=' + str(result.get('returnguildid')))
 
 @app.route('/updatesongqueue', methods = ['POST'])
 def updatesongqueue():
