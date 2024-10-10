@@ -201,3 +201,5 @@ search163chrome.py
 cookie*
 NeteaseCloudMusicApi*
 err*
+.vscode
+neteasecloudmusicapi
