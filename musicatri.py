@@ -19,7 +19,7 @@ if key["NeteaseCloudMusicApiUseExisting"]:
     cloudmusicapiurl = key["NeteaseCloudMusicApiUseExisting"]
     print("主人，亚托莉已经帮你连接了自定义的网易云音乐API喵~")
 else:
-    subprocess.Popen(["node",dirpath+"neteasecloudmusicapi/app.js"])
+    # subprocess.Popen(["node",dirpath+"neteasecloudmusicapi/app.js"])  // 手动部署neteasecloudmusicapi
     cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
     print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
 
@@ -207,7 +207,7 @@ async def qr_check():
         async with session.get(cloudmusicapiurl + "/login/qr/check?key=" + args["key"] + "&timestamp=" + args["timestamp"]) as resp:
             results = await resp.json()
             return results
-        
+
 
 @app.route('/profile-test')
 def home():
