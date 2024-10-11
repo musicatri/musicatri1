@@ -201,5 +201,16 @@ search163chrome.py
 cookie*
 NeteaseCloudMusicApi*
 err*
+
+# vscode项目配置文件
 .vscode
+
+# 网易云api项目目录，请直接使用nodejs部署独立服务
 neteasecloudmusicapi
+
+# 过时的启动脚本
+setup.bat
+setup.py
+setup.sh
+run.sh
+
