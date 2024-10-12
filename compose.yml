@@ -1,0 +1,42 @@
+version: "3.8"
+name: musicatri
+services:
+  musicatri:
+#    image: pineclone/musicatri:dev
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    tty: true
+    stdin_open: true
+    environment:
+      - NETEASECLOUDMUSICAPI_URL=${NETEASECLOUDMUSICAPI_URL}
+      - MONGODB_URL=${MONGODB_URL}
+      - SERVER_PORT=${SERVER_PORT}
+      - PUBLIC_URL=${PUBLIC_URL}
+      - APP_SECRET_KEY=${APP_SECRET_KEY}
+      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_BOT_BANNER=${DISCORD_BOT_BANNER}
+      - DISCORD_BOT_ACTIVITY=${DISCORD_BOT_ACTIVITY}
+      - DISCORD_BOT_COMMAND_PREFIX=${DISCORD_BOT_COMMAND_PREFIX}
+      - YOUTUBEDL_PROXY=${YOUTUBEDL_PROXY}
+      - CONSOLE_LOG_LEVEL=${CONSOLE_LOG_LEVEL}
+      - LOGFILE_LOG_LEVEL=${LOGFILE_LOG_LEVEL}
+      - LOG_BASIC_FORMAT=${LOG_BASIC_FORMAT}
+      - LOG_DATE_FORMAT=${LOG_DATE_FORMAT}
+    depends_on:
+      - neteasecloudmusicapi
+      - mongodb
+
+  neteasecloudmusicapi:
+    hostname: neteasecloudmusicapi
+    image: binaryify/netease_cloud_music_api:v4.23.1
+
+  mongodb:
+    hostname: mongodb
+    image: mongodb/mongodb-community-server:6.0.10-ubi8
+

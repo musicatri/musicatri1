@@ -39,40 +39,16 @@ import aiohttp
 import pymongo
 from flask_cors import CORS
 
+import logging
+
 # windows平台下换成默认的gbk
 if platform.system() == "Windows":
     cmd("chcp 936")
 
-run_with_docker = os.path.exists('/.dockerenv')  # docker运行
-dirpath = dirname(realpath(__file__)) + "/"  # 项目根路径
-cookie = ''  # 网易云登录cookie
-
-discord_bot_command_prefix = None  # 机器人名称
-cloudmusicapi_url = None  # 网易云音乐api后端url
-mongodb_url = None  # mongodb数据库url
-server_port = None  # 端口号
-public_url = None  # 公开路径
-app_secret_key = None  # 应用密匙
-
-discord_redirect_uri = None  # discord OAuth2重定向认证地址
-discord_client_id = None  # discord客户端id
-discord_client_secret = None  # discord客户端密匙
-discord_bot_token = None  # discord机器人token
-discord_bot_banner = None  # discord机器人旗帜栏显示
-discord_bot_activity = None  # discord机器人状态
-# -1 : unknown
-# 0 : playing
-# 1 : streaming
-# 2 : listening
-# 3 : watching
-# 4 : custom
-# 5 : competing
-
-youtubedl_proxy = None  # youtube-dl代理地址
-
 # 初始化项目目录
-config_path = "./config.json"
-songcachedir_path = "./songcache"
+config_path = "./config.json"  # 配置文件
+songcachedir_path = "./songcache"  # 歌曲缓存目录
+logdir_path = "./logs"  # 日志目录
 
 # 创建项目配置文件
 if not os.path.exists(config_path):
@@ -83,6 +59,59 @@ if not os.path.exists(config_path):
 if not os.path.exists(songcachedir_path):
     os.mkdir(songcachedir_path)
 
+# 创建配置文件目录
+if not os.path.exists(logdir_path):
+    os.mkdir(logdir_path)
+
+# 项目配置项
+run_with_docker = os.path.exists('/.dockerenv')  # docker运行
+dirpath = dirname(realpath(__file__)) + "/"  # 项目根路径
+cookie = ''  # 网易云登录cookie
+
+DISCORD_BOT_COMMAND_PREFIX = None  # 机器人命令前缀
+NETEASECLOUDMUSICAPI_URL = None  # 网易云音乐api后端url
+MONGODB_URL = None  # mongodb数据库url
+SERVER_PORT = None  # 端口号
+PUBLIC_URL = None  # 公开路径
+APP_SECRET_KEY = None  # 应用密匙
+CONSOLE_LOG_LEVEL = None  # 控制台日志等级
+LOGFILE_LOG_LEVEL = None  # log文件日志等级
+LOG_BASIC_FORMAT = None  # 日志输出格式化
+LOG_DATE_FORMAT = None  # 日志日期格式化
+
+# discord配置项
+DISCORD_REDIRECT_URI = None  # discord OAuth2重定向认证地址
+DISCORD_CLIENT_ID = None  # discord客户端id
+DISCORD_CLIENT_SECRET = None  # discord客户端密匙
+DISCORD_BOT_TOKEN = None  # discord机器人token
+DISCORD_BOT_BANNER = None  # discord机器人旗帜栏显示
+DISCORD_BOT_ACTIVITY = None  # discord机器人状态
+# -1 : unknown
+# 0 : playing
+# 1 : streaming
+# 2 : listening
+# 3 : watching
+# 4 : custom
+# 5 : competing
+
+# youtube-dl配置项
+YOUTUBEDL_PROXY = None  # youtube-dl代理地址
+
+
+
+# 日志等级
+# CRITICAL = 50
+# FATAL = CRITICAL
+# ERROR = 40
+# WARNING = 30
+# WARN = WARNING
+# INFO = 20
+# DEBUG = 10
+# NOTSET = 0
+
+# 项目日志
+logger = logging.getLogger()
+
 # 加载应用配置
 with (codecs.open(dirpath + "config.json", encoding='utf-8', mode='r') as config_file):
     # aaa=r.read().encode().decode('utf-8-sig') win7 workaround
@@ -91,60 +120,106 @@ with (codecs.open(dirpath + "config.json", encoding='utf-8', mode='r') as config
     # docker环境下尝试加载docker容器环境变量
     if run_with_docker:
         # musicatri配置
-        cloudmusicapi_url = os.environ.get("NETEASECLOUDMUSICAPI_URL")
-        mongodb_url = os.environ.get("MONGODB_URL")
-        server_port = os.environ.get("SERVER_PORT")
-        public_url = os.environ.get("PUBLIC_URL")
-        app_secret_key = os.environ.get("APP_SECRET_KEY")
+        NETEASECLOUDMUSICAPI_URL = os.environ.get("NETEASECLOUDMUSICAPI_URL")
+        MONGODB_URL = os.environ.get("MONGODB_URL")
+        SERVER_PORT = os.environ.get("SERVER_PORT")
+        PUBLIC_URL = os.environ.get("PUBLIC_URL")
+        APP_SECRET_KEY = os.environ.get("APP_SECRET_KEY")
+        CONSOLE_LOG_LEVEL = os.environ.get("CONSOLE_LOG_LEVEL")
+        LOGFILE_LOG_LEVEL = os.environ.get("LOGFILE_LOG_LEVEL")
+
+        print(f"docker控制台日志等级: {CONSOLE_LOG_LEVEL}")
+        print(f"docker文件日志等级: {LOGFILE_LOG_LEVEL}")
+
+        LOG_BASIC_FORMAT = os.environ.get("LOG_BASIC_FORMAT")
+        LOG_DATE_FORMAT = os.environ.get("LOG_DATE_FORMAT")
 
         # discord配置
-        discord_client_id = os.environ.get("DISCORD_CLIENT_ID")
-        discord_redirect_uri = os.environ.get("DISCORD_REDIRECT_URI")
-        discord_client_secret = os.environ.get("DISCORD_CLIENT_SECRET")
-        discord_bot_token = os.environ.get("DISCORD_BOT_TOKEN")
-        discord_bot_banner = os.environ.get("DISCORD_BOT_BANNER")
-        discord_bot_activity = os.environ.get("DISCORD_BOT_ACTIVITY")
-        discord_bot_command_prefix = os.environ.get("DISCORD_BOT_COMMAND_PREFIX")
+        DISCORD_REDIRECT_URI = os.environ.get("DISCORD_REDIRECT_URI")
+        DISCORD_CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID")
+        DISCORD_CLIENT_SECRET = os.environ.get("DISCORD_CLIENT_SECRET")
+        DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
+        DISCORD_BOT_BANNER = os.environ.get("DISCORD_BOT_BANNER")
+        DISCORD_BOT_ACTIVITY = os.environ.get("DISCORD_BOT_ACTIVITY")
+        DISCORD_BOT_COMMAND_PREFIX = os.environ.get("DISCORD_BOT_COMMAND_PREFIX")
 
         # youtube-dl配置
-        youtubedl_proxy = os.environ.get("YOUTUBEDL_PROXY")
+        YOUTUBEDL_PROXY = os.environ.get("YOUTUBEDL_PROXY")
 
 
     # 若无法获取环境变量使用atrikey.json配置文件配置项
     # ================================================== musicatri配置 ==================================================
-    mongodb_url = mongodb_url or config.get("MONGODB_URL") or "mongodb://localhost:27015"
-    cloudmusicapi_url = cloudmusicapi_url or config.get("NETEASECLOUDMUSICAPI_URL") or "http://localhost:3000"
-    server_port = server_port or config.get("SERVER_PORT") or 5000
-    public_url = public_url or config.get("PUBLIC_URL") or "http://localhost:3000"
-    app_secret_key = app_secret_key or config.get("APP_SECRET_KEY")
+    MONGODB_URL = MONGODB_URL or config.get("MONGODB_URL") or "mongodb://localhost:27017"
+    NETEASECLOUDMUSICAPI_URL = NETEASECLOUDMUSICAPI_URL or config.get("NETEASECLOUDMUSICAPI_URL") or "http://localhost:3000"
+    SERVER_PORT = SERVER_PORT or config.get("SERVER_PORT") or 5000
+    PUBLIC_URL = PUBLIC_URL or config.get("PUBLIC_URL") or "http://localhost:3000"
+    APP_SECRET_KEY = APP_SECRET_KEY or config.get("APP_SECRET_KEY")
+    CONSOLE_LOG_LEVEL = CONSOLE_LOG_LEVEL or config.get("CONSOLE_LOG_LEVEL") or "INFO"
+    LOGFILE_LOG_LEVEL = LOGFILE_LOG_LEVEL or config.get("LOGFILE_LOG_LEVEL") or "DEBUG"
+    LOG_BASIC_FORMAT = LOG_BASIC_FORMAT or config.get("LOG_BASIC_FORMAT") or "%(asctime)s:%(levelname)s:%(message)s"
+    LOG_DATE_FORMAT = LOG_DATE_FORMAT or config.get("LOG_DATE_FORMAT") or '%Y-%m-%d %H:%M:%S'
 
-    if not app_secret_key:
-        raise Exception("未找到配置APP_SECRET_KEY")
+    if not APP_SECRET_KEY or APP_SECRET_KEY == '':
+        raise Exception("无效的配置APP_SECRET_KEY")
+    #  配置日志等级
+    formatter = logging.Formatter(LOG_BASIC_FORMAT, LOG_DATE_FORMAT)
+    console_handler = logging.StreamHandler()  # 输出到控制台的handler
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel(CONSOLE_LOG_LEVEL)
+
+    # 创建配置文件
+    now = int(round(time.time() * 1000))
+    logfile_index = 1
+    while True:
+        logfile_naming_format = f"%Y-%m-%d-{logfile_index}.log"
+        logfile_name = time.strftime(logfile_naming_format, time.localtime(now / 1000))
+        logfile_path = os.path.join(logdir_path, logfile_name)
+
+        if not os.path.exists(logfile_path):
+            break
+        logfile_index += 1  # 若配置文件已经存在那么继续添加索引号
+
+    logfile_handler = logging.FileHandler(logfile_path)  # 输出到文件的handler
+    logfile_handler.setFormatter(formatter)
+    logfile_handler.setLevel(LOGFILE_LOG_LEVEL)
+
+    # 配置handler
+    logger.setLevel(logging.DEBUG)  # 日志最详细级别，支持覆盖
+    logger.addHandler(console_handler)
+    logger.addHandler(logfile_handler)
+    print(f"控制台输出等级: {CONSOLE_LOG_LEVEL}")
+    print(f"文件输出等级: {LOGFILE_LOG_LEVEL}")
+
 
     # ================================================== discord配置 ====================================================
-    discord_redirect_uri = discord_redirect_uri or config.get("DISCORD_REDIRECT_URI")
-    discord_client_id = discord_client_id or config.get("DISCORD_CLIENT_ID")
-    discord_client_secret = discord_client_secret or config.get("DISCORD_CLIENT_SECRET")
-    discord_bot_token = discord_bot_token or config.get("DISCORD_BOT_TOKEN")
-    discord_bot_banner = discord_bot_banner or config.get("DISCORD_BOT_BANNER")
-    discord_bot_activity = discord_bot_activity or config.get("DISCORD_BOT_ACTIVITY")
-    discord_bot_command_prefix = discord_bot_command_prefix or config.get("DISCORD_BOT_COMMAND_PREFIX")
+    DISCORD_REDIRECT_URI = DISCORD_REDIRECT_URI or config.get("DISCORD_REDIRECT_URI")
+    DISCORD_CLIENT_ID = DISCORD_CLIENT_ID or config.get("DISCORD_CLIENT_ID")
+    DISCORD_CLIENT_SECRET = DISCORD_CLIENT_SECRET or config.get("DISCORD_CLIENT_SECRET")
+    DISCORD_BOT_TOKEN = DISCORD_BOT_TOKEN or config.get("DISCORD_BOT_TOKEN")
+    DISCORD_BOT_BANNER = DISCORD_BOT_BANNER or config.get("DISCORD_BOT_BANNER")
+    DISCORD_BOT_ACTIVITY = DISCORD_BOT_ACTIVITY or config.get("DISCORD_BOT_ACTIVITY")
+    DISCORD_BOT_COMMAND_PREFIX = DISCORD_BOT_COMMAND_PREFIX or config.get("DISCORD_BOT_COMMAND_PREFIX")
 
-    if not discord_redirect_uri:
-        print(f"Discord OAuth2 RedirectURL配置: {public_url}/account/callback")
-        raise Exception("未找到配置DISCORD_REDIRECT_URI")
-    if not discord_client_id:
-        raise Exception("未找到配置DISCORD_CLIENT_ID")
-    if not discord_client_secret:
-        raise Exception("未找到配置DISCORD_CLIENT_SECRET")
-    if not discord_bot_token:
-        raise Exception("未找到配置DISCORD_BOT_TOKEN")
-    if not discord_bot_banner or discord_bot_banner == "":
-        discord_bot_banner = "主人的命令||" + discord_bot_command_prefix + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"
-    if not discord_bot_activity or discord_bot_activity not in (-1, 0, 1, 2, 3 ,4 ,5):
-        discord_bot_activity = -1
-    if not discord_bot_command_prefix or discord_bot_command_prefix == "":
-        discord_bot_command_prefix = "musicatri"
+    if not DISCORD_REDIRECT_URI or DISCORD_REDIRECT_URI == "":
+        logger.warning(f"请确认正确的Discord OAuth2 RedirectURL配置: {PUBLIC_URL}/account/callback")
+        raise Exception("无效的配置DISCORD_REDIRECT_URI")
+    if not DISCORD_CLIENT_ID or DISCORD_CLIENT_ID == "":
+        raise Exception("无效的配置DISCORD_CLIENT_ID")
+    if not DISCORD_CLIENT_SECRET or DISCORD_CLIENT_SECRET == "":
+        raise Exception("无效的配置DISCORD_CLIENT_SECRET")
+    if not DISCORD_BOT_TOKEN or DISCORD_BOT_TOKEN == "":
+        raise Exception("无效的配置DISCORD_BOT_TOKEN")
+    if not DISCORD_BOT_BANNER or DISCORD_BOT_BANNER == "":
+        DISCORD_BOT_BANNER = "主人的命令||" + DISCORD_BOT_COMMAND_PREFIX + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"
+
+    if type(DISCORD_BOT_ACTIVITY) is str:  # 类型转换避免无法识别
+        DISCORD_BOT_ACTIVITY = int(DISCORD_BOT_ACTIVITY)
+    if DISCORD_BOT_ACTIVITY not in {-1, 0, 1, 2, 3 , 4 , 5}:
+        logger.info("机器人旗帜栏未开启")
+        DISCORD_BOT_ACTIVITY = -1
+
+    if not DISCORD_BOT_COMMAND_PREFIX or DISCORD_BOT_COMMAND_PREFIX == "":
+        DISCORD_BOT_COMMAND_PREFIX = "musicatri"
 
 
     # ================================================== youtube-dl配置 =================================================
@@ -162,27 +237,31 @@ with (codecs.open(dirpath + "config.json", encoding='utf-8', mode='r') as config
         'source_address': '0.0.0.0',  # bind to ipv4 since ipv6 addresses cause issues sometimes
         #    'download_archive':dirpath+'ytdldownloads.txt'
     }
-    youtubedl_proxy = youtubedl_proxy or config.get("YOUTUBEDL_PROXY")
+    YOUTUBEDL_PROXY = YOUTUBEDL_PROXY or config.get("YOUTUBEDL_PROXY")
 
-    if youtubedl_proxy:  # 代理配置
-        ytdl_format_options['proxy'] = youtubedl_proxy
+    if YOUTUBEDL_PROXY:  # 代理配置
+        ytdl_format_options['proxy'] = YOUTUBEDL_PROXY
     ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
+    # 可能存在歧义的“名字”，实际上是命令
+    logger.info(f"网易云音乐api后端服务URL: {NETEASECLOUDMUSICAPI_URL}")
+    logger.info(f"MongoDB数据库连接URL: {MONGODB_URL}")
+    # logger.info(f"旗帜栏: {discord_bot_banner}")
+    # logger.info(f"机器人状态: {discord_bot_activity}")
+    # print("主人我的云控制链接是" + public_url + "/songctl")
+    # print("主人，我的工作目录是 "+ dirpath + " 喵~")
 
-    print("我的名字是" + str(discord_bot_command_prefix) + "。谢谢主人给我起这么好听的名字！")
-    print("主人我的云控制链接是" + public_url + "/songctl")
-    print("主人，我的工作目录是 "+ dirpath + " 喵~")
 
+logger.info("我的名字是" + str(DISCORD_BOT_COMMAND_PREFIX) + "。谢谢主人给我起这么好听的名字！")
 
 # mongodb配置
-dbclient = pymongo.MongoClient(mongodb_url)
+dbclient = pymongo.MongoClient(MONGODB_URL)
 dblist = dbclient.list_database_names()
 
 # 建立数据库
 db=dbclient["musicatri"]
 songdata=db["songdata"]
 userdata=db["userdata"]
-
 
 # globalconfig=db["globalconfig"]
 # langpref=db["langpref"]
@@ -196,18 +275,18 @@ userdata=db["userdata"]
 # flask配置
 app = Flask(__name__)
 CORS(app)
-app.secret_key = app_secret_key  # 应用密匙
+app.secret_key = APP_SECRET_KEY  # 应用密匙
 
 
 # discord配置
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
-app.config['DISCORD_CLIENT_ID'] = discord_client_id
-app.config['DISCORD_CLIENT_SECRET'] = discord_client_secret
-app.config['DISCORD_REDIRECT_URI'] = discord_redirect_uri
+app.config['DISCORD_CLIENT_ID'] = DISCORD_CLIENT_ID
+app.config['DISCORD_CLIENT_SECRET'] = DISCORD_CLIENT_SECRET
+app.config['DISCORD_REDIRECT_URI'] = DISCORD_REDIRECT_URI
 discord_auth = DiscordOAuth2Session(app)
 
 intents = discord.Intents.all()
-musicatri = commands.AutoShardedBot(command_prefix=discord_bot_command_prefix, intents=intents, help_command=None)
+musicatri = commands.AutoShardedBot(command_prefix=DISCORD_BOT_COMMAND_PREFIX, intents=intents, help_command=None)
 
 
 # 本地化
@@ -315,7 +394,7 @@ def save_cookie():
 async def qr_key():
     args = request.args.to_dict()
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapi_url + "/login/qr/key?timestamp=" + args["timestamp"]) as resp:
+        async with session.get(NETEASECLOUDMUSICAPI_URL + "/login/qr/key?timestamp=" + args["timestamp"]) as resp:
             results = await resp.json()
             return results
 
@@ -324,7 +403,7 @@ async def qr_key():
 async def qr_create():
     args = request.args.to_dict()
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapi_url + '/login/qr/create?qrimg=true&key=' + args["key"] + "&timestamp=" + args["timestamp"]) as resp:
+        async with session.get(NETEASECLOUDMUSICAPI_URL + '/login/qr/create?qrimg=true&key=' + args["key"] + "&timestamp=" + args["timestamp"]) as resp:
             results = await resp.json()
             return results
 
@@ -333,7 +412,7 @@ async def qr_create():
 async def qr_check():
     args = request.args.to_dict()
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapi_url + "/login/qr/check?key=" + args["key"] + "&timestamp=" + args["timestamp"]) as resp:
+        async with session.get(NETEASECLOUDMUSICAPI_URL + "/login/qr/check?key=" + args["key"] + "&timestamp=" + args["timestamp"]) as resp:
             results = await resp.json()
             return results
 
@@ -343,8 +422,9 @@ def home():
     user = discord_auth.fetch_user()
     gl={}
     for g in user.fetch_guilds():
-        gl[g.id]=g.discord_bot_command_prefix
-    print(gl)
+        gl[g.id]=g.DISCORD_BOT_COMMAND_PREFIX
+    # print(gl)
+    logger.debug(gl)
     return f"""
         <html>
         <head>
@@ -488,7 +568,7 @@ async def requestnewsong():
             else:
                 return await playsongbyid(guildid, guild, id)
         else:
-            print("no connect")
+            logger.info("no connect")
             return "please join the voice channel first"
     else:
         return "请先登录喵~"
@@ -497,7 +577,7 @@ async def playsongbyid(guildid, guild, id):
     global a
     if not players[guildid].is_playing():
         if id:
-            print(id)
+            logger.info(id)
             if not await dl163ali(id):
                 return
             songandartname=str(await getsongartists(id)).replace("[", "").replace("]", "").replace("'", "") + "——" + str(await getsongname(id))
@@ -607,7 +687,7 @@ def changesongstate():
 
 @app.route('/songctl',methods = ['GET'])
 def songctl():
-    print("收到来自"+request.remote_addr+"的新请求喵~")
+    logger.info(f"收到来自{request.remote_addr}的新请求喵~")
     return send_file(dirpath+"website/songctl.html")
 
 @app.route('/<path:path>')
@@ -632,7 +712,7 @@ async def getsongdetails(id):
     if a:
         return a
     else:
-        print("cache miss")
+        logger.info("cache miss")
         async with aiohttp.ClientSession() as session:
             async with session.get("http://music.163.com/api/song/detail/?id="+id+"&ids=%5B"+id+"%5D") as resp:
                 results = await resp.json(content_type=None)
@@ -653,12 +733,12 @@ async def getsongartists(id):
 
 async def getsongpic(id):
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapi_url + "/song/detail?ids=" + id) as resp:
+        async with session.get(NETEASECLOUDMUSICAPI_URL + "/song/detail?ids=" + id) as resp:
             results = await resp.json()
             return results["songs"][0]["al"]["picUrl"]
 async def searchsong(sn):
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapi_url + "/search?keywords=" + sn) as resp:
+        async with session.get(NETEASECLOUDMUSICAPI_URL + "/search?keywords=" + sn) as resp:
             results = await resp.json()
             if results["result"]['songCount'] == 0:
                 return -1
@@ -681,7 +761,7 @@ async def searchsong(sn):
 
 async def getplaylist(sn):
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapi_url + "/playlist/track/all?id=" + sn + "&limit=30") as resp:
+        async with session.get(NETEASECLOUDMUSICAPI_URL + "/playlist/track/all?id=" + sn + "&limit=30") as resp:
             results = await resp.json()
             id =results["songs"]
             for i in id:
@@ -699,7 +779,7 @@ async def getplaylist(sn):
             return nl
 async def getalbum(sn):
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapi_url + "/album?id=" + sn) as resp:
+        async with session.get(NETEASECLOUDMUSICAPI_URL + "/album?id=" + sn) as resp:
             results = await resp.json()
             id =results["songs"]
             for i in id:
@@ -734,7 +814,7 @@ def replacetrans(message, userid, *replace):
             {"$set": {"lang": "zh.json"}},
             upsert=True
         )
-        default_message = "You have not set a language, defaulting to Chinese Simplified. You can set a language with " + discord_bot_command_prefix + "langset <language>."
+        default_message = "You have not set a language, defaulting to Chinese Simplified. You can set a language with " + DISCORD_BOT_COMMAND_PREFIX + "langset <language>."
         translation = translations["zh.json"][message]
         if replace:
             if len(replace) > 1:
@@ -805,7 +885,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                     try:
                         songdata.insert_one(d)
                     except:
-                        print(d)
+                        logger.warning(d)
                 lista.append([discord.FFmpegPCMAudio(source),d])
             return lista
 
@@ -827,7 +907,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 try:
                     songdata.insert_one(data)
                 except:
-                    print(data)
+                    logger.warning(data)
             return (discord.FFmpegPCMAudio(source),data)
 
 async def getyt(url):
@@ -855,7 +935,7 @@ async def playt(ctx, vid):
     cstarttime[ctx.guild.id]=int(time.time()*1000)
     await ctx.send(    replacetrans("now_playing",ctx.author.id,vid[1]["title"]) )
     # await ctx.send(replacetrans("show_web_address_user", ctx.author.id, config["songctladdr"] + str(ctx.guild.id)))
-    await ctx.send(replacetrans("show_web_address_user", ctx.author.id, public_url + "/songctl?id=" + str(ctx.guild.id)))
+    await ctx.send(replacetrans("show_web_address_user", ctx.author.id, PUBLIC_URL + "/songctl?id=" + str(ctx.guild.id)))
     add1play(vid[1]["url"])
 
 async def addtoqueueyt(ctx, song):
@@ -959,10 +1039,10 @@ def ckqueue(guild, uselessd, uselessd2=None):
         players[guild.id] = discord.utils.get(musicatri.voice_clients, guild=guild)
         players[guild.id].play(song[0], after=partial(ckqueue, guild))
         cstarttime[guild.id]=int(time.time()*1000)
-        print(song)
+        logger.info(song)
         add1play(song[1]["url"])
     except Exception as e:
-        print(traceback.format_exc())
+        logger.warning(traceback.format_exc())
         cs.pop(guild.id)
 
 
@@ -1076,12 +1156,12 @@ class chatgpt():
 
 @musicatri.event
 async def on_ready():
-    print("主人我上线啦(｡･ω･｡)ﾉ♡")
-    print("主人我目前加入了" + str(len(musicatri.guilds)) + "个服务器哦")
+    logger.info("主人我上线啦(｡･ω･｡)ﾉ♡")
+    logger.info("主人我目前加入了" + str(len(musicatri.guilds)) + "个服务器哦")
     writeplays.start()
     connecttovoice.start()
     # await musicatri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="主人的命令||" + discord_bot_command_prefix + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
-    await musicatri.change_presence(activity=discord.Activity(type=discord_bot_activity, name=discord_bot_banner))
+    await musicatri.change_presence(activity=discord.Activity(type=DISCORD_BOT_ACTIVITY, name=DISCORD_BOT_BANNER))
 
 async def getsongid(sn):
     b = sn.find("song?id=")
@@ -1136,7 +1216,7 @@ async def dl163ali(id):
         return True
     #/song/url/v1?id=33894312&level=exhigh
     async with aiohttp.ClientSession() as session:
-        async with session.get(cloudmusicapi_url + "/song/url/v1?id=" + id + "&level=higher&cookie=" + cookie) as resp:
+        async with session.get(NETEASECLOUDMUSICAPI_URL + "/song/url/v1?id=" + id + "&level=higher&cookie=" + cookie) as resp:
             #print(cloudmusicapiurl+"/song/url/v1?id="+id+"&level=exhigh&cookie="+cookie)
             results=await resp.json()
             async with aiohttp.ClientSession() as session:
@@ -1521,7 +1601,7 @@ async def play163(ctx, id):
     cstarttime[ctx.guild.id]=int(time.time()*1000)
     await ctx.send(replacetrans("now_playing",ctx.author.id,songname))
     # await ctx.send(replacetrans("show_web_address_user", ctx.author.id, config["songctladdr"] + str(ctx.guild.id)))
-    await ctx.send(replacetrans("show_web_address_user", ctx.author.id, public_url + "/songctl?id=" + str(ctx.guild.id)))
+    await ctx.send(replacetrans("show_web_address_user", ctx.author.id, PUBLIC_URL + "/songctl?id=" + str(ctx.guild.id)))
     add1play(id)
 def pausesong(guildid):
     if guildid in pausetime.keys():
@@ -1558,14 +1638,14 @@ async def connect(ctx, *a):
                 await ctx.send(replacetrans("connect", ctx.author.id))
                 await ctx.send(
                     # replacetrans("show_web_address_user", ctx.author.id, config["songctladdr"] + str(ctx.guild.id)))
-                    replacetrans("show_web_address_user", ctx.author.id, public_url + "/songctl?id=" + str(ctx.guild.id)))
+                    replacetrans("show_web_address_user", ctx.author.id, PUBLIC_URL + "/songctl?id=" + str(ctx.guild.id)))
         else:
             await ctx.message.author.voice.channel.connect()
             players[ctx.guild.id] = discord.utils.get(musicatri.voice_clients, guild=ctx.guild)
 
             await ctx.send(replacetrans("connect",ctx.author.id))
             # await ctx.send(replacetrans("show_web_address_user", ctx.author.id, config["songctladdr"] + str(ctx.guild.id)))
-            await ctx.send(replacetrans("show_web_address_user", ctx.author.id, public_url + "/songctl?id=" + str(ctx.guild.id)))
+            await ctx.send(replacetrans("show_web_address_user", ctx.author.id, PUBLIC_URL + "/songctl?id=" + str(ctx.guild.id)))
     else:
         await ctx.send(replacetrans("error_not_connected",ctx.author.id))
 
@@ -1693,7 +1773,7 @@ async def stopadding(ctx):
 async def help(ctx):
     userdata.find_one_and_update({"_id":str(ctx.author.id)},
                                   {"$inc":{"interactions":1}},upsert=True)
-    await ctx.send(public_url + "/help.html")
+    await ctx.send(PUBLIC_URL + "/help.html")
 @musicatri.command()
 async def clearqueue(ctx):
     userdata.find_one_and_update({"_id":str(ctx.author.id)},
@@ -1737,12 +1817,12 @@ async def status(ctx):
 
 @tasks.loop(seconds=30 )
 async def writeplays():
-    activitymap={"listening":discord.ActivityType.listening,"watching":discord.ActivityType.watching,"playing":discord.ActivityType.playing,"streaming":discord.ActivityType.streaming,"competing":discord.ActivityType.competing}
+    # activitymap={"listening":discord.ActivityType.listening,"watching":discord.ActivityType.watching,"playing":discord.ActivityType.playing,"streaming":discord.ActivityType.streaming,"competing":discord.ActivityType.competing}
     # if globalconfig.find_one()["custompresense"]=="":
     #     await musicatri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="主人的命令||" + musicatri_name + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
     # else:
     #     await musicatri.change_presence(activity=discord.Activity(type=activitymap[globalconfig.find_one()["activitytype"]], name=globalconfig.find_one()["custompresense"]))
-    await musicatri.change_presence(activity=discord.Activity(type=discord_bot_activity, name=discord_bot_banner))
+    await musicatri.change_presence(activity=discord.Activity(type=DISCORD_BOT_ACTIVITY, name=DISCORD_BOT_BANNER))
 
     #await asyncio.sleep(5)
     #print("主人我正在保存数据喵~")
@@ -1771,11 +1851,11 @@ async def connecttovoice():
 
 
 def startatri():
-    musicatri.run(discord_bot_token)
+    musicatri.run(DISCORD_BOT_TOKEN)
 
 
 if __name__ == '__main__':
-    thread = threading.Thread(target=serve, args=[app], kwargs={"host":"0.0.0.0", "port":server_port})
+    thread = threading.Thread(target=serve, args=[app], kwargs={"host":"0.0.0.0", "port":SERVER_PORT})
     thread.start()
     startatri()
     thread.join()
