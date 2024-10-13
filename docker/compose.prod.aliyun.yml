@@ -1,0 +1,39 @@
+# 生产环境，使用阿里云仓库镜像，因此可以直接在国内使用
+version: "3.8"
+name: musicatri
+services:
+  musicatri:
+    image: registry.cn-hangzhou.aliyuncs.com/pineclone/musicatri:${MUSICATRI_TAG}
+    ports:
+      - "5000:5000"
+    tty: true
+    stdin_open: true
+    environment:
+      - NETEASECLOUDMUSICAPI_URL=${NETEASECLOUDMUSICAPI_URL}
+      - MONGODB_URL=${MONGODB_URL}
+      - SERVER_PORT=${SERVER_PORT}
+      - PUBLIC_URL=${PUBLIC_URL}
+      - APP_SECRET_KEY=${APP_SECRET_KEY}
+      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_BOT_BANNER=${DISCORD_BOT_BANNER}
+      - DISCORD_BOT_ACTIVITY=${DISCORD_BOT_ACTIVITY}
+      - DISCORD_BOT_COMMAND_PREFIX=${DISCORD_BOT_COMMAND_PREFIX}
+      - YOUTUBEDL_PROXY=${YOUTUBEDL_PROXY}
+      - CONSOLE_LOG_LEVEL=${CONSOLE_LOG_LEVEL}
+      - LOGFILE_LOG_LEVEL=${LOGFILE_LOG_LEVEL}
+      - LOG_BASIC_FORMAT=${LOG_BASIC_FORMAT}
+      - LOG_DATE_FORMAT=${LOG_DATE_FORMAT}
+    depends_on:
+      - neteasecloudmusicapi
+      - mongodb
+
+  neteasecloudmusicapi:
+    hostname: neteasecloudmusicapi
+    image: registry.cn-hangzhou.aliyuncs.com/pineclone/netease_cloud_music_api:${NETEASECLOUDMUSICAPI_TAG}
+
+  mongodb:
+    hostname: mongodb
+    image: registry.cn-hangzhou.aliyuncs.com/pineclone/mongodb-community-server:${MONGODB_TAG}

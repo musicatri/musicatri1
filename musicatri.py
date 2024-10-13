@@ -240,7 +240,7 @@ with (codecs.open(dirpath + "config.json", encoding='utf-8', mode='r') as config
     YOUTUBEDL_PROXY = YOUTUBEDL_PROXY or config.get("YOUTUBEDL_PROXY")
 
     if YOUTUBEDL_PROXY:  # 代理配置
-        ytdl_format_options['proxy'] = YOUTUBEDL_PROXY
+        ytdl_format_options['proxy-enhance'] = YOUTUBEDL_PROXY
     ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
     # 可能存在歧义的“名字”，实际上是命令
@@ -286,6 +286,14 @@ app.config['DISCORD_REDIRECT_URI'] = DISCORD_REDIRECT_URI
 discord_auth = DiscordOAuth2Session(app)
 
 intents = discord.Intents.all()
+
+# from aiohttp import ProxyConnector, BasicAuth
+#
+# basic_auth = BasicAuth(USER_PROXY_LOGIN, USER_PROXY_PASS)
+# connector = ProxyConnector(USER_PROXY, proxy_auth=basic_auth)
+#
+# cient = discord.Client(connector=connector)
+
 musicatri = commands.AutoShardedBot(command_prefix=DISCORD_BOT_COMMAND_PREFIX, intents=intents, help_command=None)
 
 

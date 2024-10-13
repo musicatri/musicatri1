@@ -112,7 +112,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+docker/.env
 .venv
 env/
 venv/
@@ -214,3 +214,5 @@ setup.py
 setup.sh
 run.sh
 logs
+docker/config.yaml
+docker/mongodb/

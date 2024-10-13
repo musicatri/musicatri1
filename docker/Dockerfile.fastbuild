@@ -1,0 +1,14 @@
+# 使用开发镜像以加快构建速度
+FROM pineclone/musicatri:dev-base-v1.0.0
+
+# 设置工作目录到/musicatri
+WORKDIR /musicatri
+
+# 复制项目运行文件
+COPY ../langfiles /musicatri/langfiles
+COPY ../website /musicatri/website
+COPY ../musicatri.py /musicatri/musicatri.py
+COPY ../config.json /musicatri/config.json
+
+# 项目启动入口
+ENTRYPOINT ["python", "./musicatri.py"]

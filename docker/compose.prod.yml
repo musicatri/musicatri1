@@ -1,11 +1,9 @@
+# 生产环境
 version: "3.8"
 name: musicatri
 services:
   musicatri:
-#    image: pineclone/musicatri:dev
-    build:
-      context: ./
-      dockerfile: Dockerfile
+    image: pineclone/musicatri:${MUSICATRI_TAG}
     ports:
       - "5000:5000"
     tty: true
@@ -34,9 +32,8 @@ services:
 
   neteasecloudmusicapi:
     hostname: neteasecloudmusicapi
-    image: binaryify/netease_cloud_music_api:v4.23.1
+    image: binaryify/netease_cloud_music_api:${NETEASECLOUDMUSICAPI_TAG}
 
   mongodb:
     hostname: mongodb
-    image: mongodb/mongodb-community-server:6.0.10-ubi8
-
+    image: mongodb/mongodb-community-server:${MONGODB_TAG}
