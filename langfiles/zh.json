@@ -24,7 +24,7 @@
 "spelling_please_connect_to_voice":"主人请加入一个语音频道，不然亚托莉没法给您报单词哦！",
 "spelling_test_start_add":"拼写测试开始！\n请使用以下格式添加单词！\n[\"单词一\",\"单词二\",\"单词三\"]",
 "spelling_start":"主人的单词亚托莉已经记住啦，毕竟亚托莉是高性能的呢！现在亚托莉要把单词收走了哦!(需要删除信息权限)",
-"spelling_test_please_respond":"请输入(r让亚托莉重新念一遍)：",
+"spelling_test_please_respond":"请输入(r让亚托莉重新念一遍,q退出)：",
 "spelling_correct":"答对了,没想到笨蛋主人记忆力还行呢！",
 "spelling_wrong":"答错了，正确答案是 %a 。看来主人还是离不开我呢！",
 "spelling_wrong_reenter":"请输入 %a (r让亚托莉重新念一遍)：",
