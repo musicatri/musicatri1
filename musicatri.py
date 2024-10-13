@@ -997,6 +997,10 @@ async def spelling(ctx):
                 elif ans == "r":
                     #print("retry")
                     pass
+                elif ans == "q":
+                    #print("retry")
+                    await ctx.send("ok")
+                    return
                 else:
                     #print("wrong")
                     await ctx.send(replacetrans("spelling_wrong",ctx.author.id,w))
