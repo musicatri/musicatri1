@@ -552,10 +552,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = asyncio.get_event_loop()
         to_run = partial(ytdl.extract_info, url=search)
         data = await loop.run_in_executor(None, to_run)
-        # if key["devmode"]:
-        #     with open(dirpath + "./ytdltemp/" + data['id'] + ".info.json", "w") as f:
-        #         f.write(json.dumps(data, sort_keys=True, indent=4))
-           #why it not work
+
         if 'entries' in data:
             lista=[]
             #it is a playlist
@@ -575,6 +572,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                     try:
                         songdata.insert_one(d)
                     except:
+                        print(traceback.format_exc(),"database update error")
                         print(d)
                 lista.append([discord.FFmpegPCMAudio(source),d])
             return lista
@@ -597,6 +595,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 try:
                     songdata.insert_one(data)
                 except:
+                    print(traceback.format_exc(), "database update error")
                     print(data)
             return (discord.FFmpegPCMAudio(source),data)
 
