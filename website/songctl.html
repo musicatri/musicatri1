@@ -337,6 +337,7 @@ fetch(url+'/requestnewsong', {
 
     });
       }
+
   const prams = new URLSearchParams(window.location.search);
 const guildid = prams.get("id");
 const url='http://'+window.location.hostname +':'+location.port
@@ -402,20 +403,19 @@ function postUpdatedList(updatedQueue) {
     // Perform any necessary UI updates or display success message
   });
 }
-
 function getQueueFromServer() {
+  if (isDragging) return; // Skip updating the queue if the user is dragging
+
   const sortableList = document.getElementById("sortable-list");
-  fetch(url+"/getcurrentqueue?id="+guildid)
+  fetch(url + "/getcurrentqueue?id=" + guildid)
     .then(response => response.json())
     .then(data => {
       const updatedQueue = data.map(song => song.trim());
       const previousQueue = Array.from(sortableList.children).map(item => item.textContent.trim());
-//.substring(0, song.trim().length - 1)
-//.substring(0, item.textContent.trim().length - 1)
+
       if (arraysAreEqual(updatedQueue, previousQueue)) {
         return;
       }
-
 
       sortableList.innerHTML = "";
 
@@ -437,13 +437,23 @@ function getQueueFromServer() {
       const sortable = new Sortable(sortableList, {
         handle: ".list-item",
         animation: 150,
+        onStart: function () {
+          isDragging = true; // Dragging has started
+        },
         onEnd: function (evt) {
+          isDragging = false; // Dragging has ended
           const updatedQueue = Array.from(sortableList.children).map(item => item.textContent.trim().substring(0, item.textContent.trim().length - 1));
           postUpdatedList(updatedQueue);
         },
       });
     });
 }
+
+setInterval(() => {
+  if (!isDragging) {
+    getQueueFromServer();
+  }
+}, 2000);
 
 function arraysAreEqual(array1, array2) {
   if (array1.length !== array2.length) {
@@ -561,7 +571,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   getQueueFromServer();
   getCurrentSong();
-  setInterval(getQueueFromServer, 2000);
   setInterval(getCurrentSong, 1000);
 
   var userLanguage = localStorage.getItem("userLanguage") || navigator.language || navigator.userLanguage;
@@ -620,10 +629,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Update the content based on the stored user language
-
-
-
-
 
 updateContent();
 
