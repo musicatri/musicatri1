@@ -17,21 +17,18 @@ else:
     key["devmode"]=False
 key["ytdlproxy"]=input("enter proxy address for yt-dlp(leave blank if you don't need it)\n")
 key["serverport"]=int(input("enter the port of the webui\n"))
-key["songctladdr"]=input("enter the ip/domain name for the webui(leave blank for localhost)\n")
-key["fcaddress"]=input("enter the aliyun function compute address to proxy netease cloud music songs(leave blank to use the one provided by author)\n")
-if key["fcaddress"] == "":
-    key["fcaddress"]="https://proxy-proxy-sfqarhkqrf.cn-beijing.fcapp.run/"
-
-if key["songctladdr"]=="":
-    key["songctladdr"]="localhost"
+key["songctladdr"]=input("enter the ip/domain name for the webui(leave blank for localhost)\n") or "localhost"
+key["fcaddress"]=input("enter the aliyun function compute address to proxy netease cloud music songs(leave blank to use the one provided by author)\n") or "https://proxy-proxy-sfqarhkqrf.cn-beijing.fcapp.run/"
 key["songctladdr"]="http://"+key["songctladdr"]+":"+str(key["serverport"])+"/songctl?id="
 key["songctlhost"]="http://"+key["songctladdr"]+":"+str(key["serverport"])
-
 key["NeteaseCloudMusicApiPort"]="3000"
 key["NeteaseCloudMusicUsername"]=input("Enter your netease cloud music cellphone number to enable playing VIP limited songs\n")
 key["NeteaseCloudMusicPassword"]=input("Enter your netease cloud music password\n")
 key["DISCORD_CLIENT_ID"]=input("Enter your discord client id\n")
 key["DISCORD_CLIENT_SECRET"]=input("Enter your discord client secret\n")
+key["songcachedir"]=input("Enter the directory for song cache (default: ./songcache/)\n") or "./songcache/"
+key["mongourl"]=input("Enter the mongodb url\n (default: mongodb://localhost:27017/)\n") or "mongodb://localhost:27017/"
+key["NeteaseCloudMusicApiUseExisting"]=input("enter the address of the existing netease cloud music api server (leave blank start one locally)\n") or ""
 with codecs.open(dirpath + "./atrikey.json", encoding='utf-8', mode='w') as f:
-    f.write(json.dumps(key))
+    f.write(json.dumps(key, indent=2))
 print("finished! please run musicatri.py to start the bot")

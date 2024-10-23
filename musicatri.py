@@ -22,7 +22,6 @@ else:
     cloudmusicapiurl = 'http://127.0.0.1:' + key["NeteaseCloudMusicApiPort"]
     print("主人，亚托莉已经帮你启动了网易云音乐API喵~")
 
-
 if not exists(dirpath + "cookie.txt"):
     while(1):
         try:
@@ -75,24 +74,13 @@ print("主人，我的工作目录是 "+dirpath+" 喵~")
 #http://musicatrictl.akutan445.com:4949/songctl?id=
 if platform.system() == "Windows":
     cmd("chcp 936")
-# with codecs.open(dirpath + "plays.json", encoding="utf-8", mode="r") as c:
-#     plays = json.loads(c.read())
-# with codecs.open(dirpath + "langpref.json", encoding="utf-8", mode="r") as c:
-#     langpref = json.loads(c.read())
-# with codecs.open(dirpath + "haogan.json", encoding='utf-8', mode='r') as f:
-#     userdata = json.loads(f.read())
-# with codecs.open(dirpath + "waifulist.txt", encoding="utf-8", mode="r") as f:
-#     waifulist = ast.literal_eval(f.read())
-# with codecs.open(dirpath + "blacklist.json", encoding="utf-8", mode="r") as f:
-#     blacklist = json.loads(f.read())
+
 dbclient=pymongo.MongoClient(key["mongourl"])
 db=dbclient["musicatri"]
 songdata=db["songdata"]
 globalconfig=db["globalconfig"]
-# langpref=db["langpref"]
 userdata=db["userdata"]
-# waifulist=db["waifulist"]
-# blacklist=db["blacklist"]
+
 
 app.secret_key = "asfsaghfdghrsghertyh"  # Replace with a secure secret key
 #if key["devmode"]: bad idea
@@ -1349,20 +1337,9 @@ async def count(ctx, *v):
     else:
         await ctx.send(replacetrans("error_not_connected",ctx.author.id))
 
-@atri.command(aliases=["劈瓜", "gua"])
-async def pigua(ctx, *v):
-    userdata.find_one_and_update({"_id":str(ctx.author.id)},
-                                  {"$inc":{"interactions":1}},upsert=True)
-    if ctx.author.voice:
-        await ctx.message.author.voice.channel.connect()
-        players[ctx.guild.id] = discord.utils.get(atri.voice_clients, guild=ctx.guild)
-        players[ctx.guild.id].play(discord.FFmpegPCMAudio(dirpath + "gua.mp3"))
-    else:
-        await ctx.send(replacetrans("killer",ctx.author.id))
 
 @atri.command(aliases=["gomenasai", "对不起", "本当にごめんなさい", "ほんどにごめなさい"])
 async def sorry(ctx, *v):
-    "特殊需求652615081682796549"
     userdata.find_one_and_update({"_id":str(ctx.author.id)},
                                   {"$inc":{"interactions":1}},upsert=True)
     try:
@@ -1499,7 +1476,7 @@ async def status(ctx):
 @tasks.loop(seconds=30 )
 async def writeplays():
     activitymap={"listening":discord.ActivityType.listening,"watching":discord.ActivityType.watching,"playing":discord.ActivityType.playing,"streaming":discord.ActivityType.streaming,"competing":discord.ActivityType.competing}
-    if globalconfig.find_one()["custompresense"]=="":
+    if globalconfig.find_one() is None or globalconfig.find_one()["custompresense"]=="":
         await atri.change_presence(activity=discord.Activity(type=discord.ActivityType.listening,name="主人的命令||" + name[0] + "play <歌曲>||支持网易云，哔哩哔哩，youtube，ニコニコ"))
     else:
         await atri.change_presence(activity=discord.Activity(type=activitymap[globalconfig.find_one()["activitytype"]],name=globalconfig.find_one()["custompresense"]))
