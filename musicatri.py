@@ -281,7 +281,7 @@ async def requestnewsong():
                     songduration[songandartname]=getmp3duration(file)
                     players[guildid].play(discord.FFmpegPCMAudio(file), after=partial(ckqueue, guild))
                     cstarttime[guildid]=int(time.time()*1000)
-                    add1play(id)
+                    add1play(id,userid)
                     return "正在播放："+songandartname
                 else:
                     vid = await getyt(a)
@@ -291,7 +291,7 @@ async def requestnewsong():
                     players[guildid].play(vid[0], after=partial(ckqueue, guild))
                     cstarttime[guildid]=int(time.time()*1000)
 
-                    add1play(vid[1]["url"])
+                    add1play(vid[1]["url"],userid)
                     return "正在播放："+vid[1]["url"]
             else:
                 if id:
@@ -303,17 +303,18 @@ async def requestnewsong():
                     try:
                         if songandartname in queues[guildid].keys():
                             songandartname=songandartname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
+                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163","requester":userid}]
                         else:
-                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
+                            queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163","requester":userid}]
                     except Exception as e:
                         queues[guildid] = {}
-                        queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163"}]
+                        queues[guildid][songandartname] = [discord.FFmpegPCMAudio(file),{"url":id,"title":songandartname,"thumbnail":False,"type":"163","requester":userid}]
                     songduration[songandartname]=getmp3duration(file)
 
                     return songandartname+"已添加到播放列表"
                 else:
                     song = await getyt(a)
+                    song[1]["requester"] = userid
                     try:
                         if song[1]["title"] in queues[guildid].keys():
                             newname=song[1]["title"] + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
@@ -603,20 +604,27 @@ async def getyt(url):
     a = await YTDLSource.create_source(url)
     return a
 
-def add1play(id):
+def add1play(id,requester):
     #the input is video or song title
     songdata.find_one_and_update(
         {"_id": id},
         {"$inc": {"play_count": 1}},
         upsert=True,
     )
+    userdata.find_one_and_update(
+            {"_id": str(requester)},
+            {"$inc": {f"play_counts.{id.replace("https://www.youtube.com/watch?v=","")}": 1}},
+            upsert=True
+        )
+
+
     # try:
     #     plays[id] = plays[id] + 1
     # except:
     #     plays[id] = 1
 
 
-async def playt(ctx, vid):
+async def playt(ctx, vid,requester):
     # “a” is the video url
     cs[ctx.guild.id] = [vid[1]["title"],vid[1]["thumbnail"]]
     songduration[vid[1]["title"]]=vid[1]["duration"]
@@ -624,7 +632,7 @@ async def playt(ctx, vid):
     cstarttime[ctx.guild.id]=int(time.time()*1000)
     await ctx.send(    replacetrans("now_playing",ctx.author.id,vid[1]["title"]) )
     await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
-    add1play(vid[1]["url"])
+    add1play(vid[1]["url"],requester)
 
 async def addtoqueueyt(ctx, song):
     if type(song) == type([]):
@@ -633,16 +641,12 @@ async def addtoqueueyt(ctx, song):
         songaddtext=""
         for song in songs:
             if adding[ctx.guild.id]:
-                try:
-                    if song[1]["title"] in queues[ctx.guild.id].keys():
-                        queues[ctx.guild.id][song[1]["title"] + "⠀⠀⠀" + str(random.randint(1000001, 9999999))] = song
-                    else:
-                        queues[ctx.guild.id][song[1]["title"]] = song
-                except:
+                if not queues[ctx.guild.id]:
                     queues[ctx.guild.id] = {}
-                    queues[ctx.guild.id][song[1]["title"]] = song
-                songduration[song[1]["title"]]=song[1]["duration"]
+                song[1]["requester"]=ctx.author.id
+                queues[ctx.guild.id][song[1]["title"]] = song
 
+                songduration[song[1]["title"]]=song[1]["duration"]
                 songaddtext=songaddtext+song[1]["title"] + "\n"
 
             else:
@@ -650,6 +654,8 @@ async def addtoqueueyt(ctx, song):
                 break
         await ctx.send(replacetrans("added_to_playlist",ctx.author.id, songaddtext))
     else:
+        song[1]["requester"] = ctx.author.id
+
         try:
             if song[1]["title"] in queues[ctx.guild.id].keys():
                 queues[ctx.guild.id][song[1]["title"] + "⠀⠀⠀" + str(random.randint(1000001, 9999999))] = song
@@ -662,7 +668,7 @@ async def addtoqueueyt(ctx, song):
 
         await ctx.send(replacetrans("added_to_playlist",ctx.author.id, song[1]["title"]))
 
-async def addtoqueue163(ctx, id):
+async def addtoqueue163(ctx, id,requester):
     if id==-1:
         #canceled
         return
@@ -681,14 +687,14 @@ async def addtoqueue163(ctx, id):
                         try:
                             if songname in queues[ctx.guild.id].keys():
                                 songname=songname + "⠀⠀⠀" + str(random.randint(1000001, 9999999))
-                                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname,"thumbnail":False}]
+                                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname,"thumbnail":False,"type":"163","requester":ctx.author.id}]
                             else:
-                                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname,"thumbnail":False}]
+                                queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname,"thumbnail":False,"type":"163","requester":ctx.author.id}]
                         except Exception as e:
                             #print(e)
                             queues[ctx.guild.id] = {}
                             #print("reset queue")
-                            queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname,"thumbnail":False}]
+                            queues[ctx.guild.id][songname] = [discord.FFmpegPCMAudio(file),{"url":i,"title":songname,"thumbnail":False,"type":"163","requester":ctx.author.id}]
 
                         await ctx.send(replacetrans("added_to_playlist",ctx.author.id,songname))
                     except:
@@ -726,7 +732,7 @@ def ckqueue(guild, uselessd, uselessd2=None):
         players[guild.id].play(song[0], after=partial(ckqueue, guild))
         cstarttime[guild.id]=int(time.time()*1000)
         print(song)
-        add1play(song[1]["url"])
+        add1play(song[1]["url"],song[1]["requester"])
     except Exception as e:
         print(traceback.format_exc())
         cs.pop(guild.id)
@@ -1185,17 +1191,17 @@ async def play(ctx, *a):
                             await play163(ctx, fid)
                             await addtoqueue163(ctx, id)
                         elif type(id) == type(()):
-                            await play163(ctx,await songchoice(ctx,id))
+                            await play163(ctx,await songchoice(ctx, id))
                         else:
                             await play163(ctx, id)
                     else:
                         song = await getyt(a)
                         if type(song) == type([]):
                             fid = song.pop(0)
-                            await playt(ctx, fid)
+                            await playt(ctx, fid,ctx.author.id)
                             await addtoqueueyt(ctx, song)
                         else:
-                            await playt(ctx, song)
+                            await playt(ctx, song,ctx.author.id)
                 else:
                     if id:
                         #returned a search reult list
@@ -1279,7 +1285,7 @@ async def play163(ctx, id):
     cstarttime[ctx.guild.id]=int(time.time()*1000)
     await ctx.send(replacetrans("now_playing",ctx.author.id,songname))
     await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
-    add1play(id)
+    add1play(id,ctx.author.id)
 def pausesong(guildid):
     if guildid in pausetime.keys():
         timea=pausetime.pop(guildid)
