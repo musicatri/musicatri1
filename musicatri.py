@@ -613,7 +613,9 @@ def add1play(id,requester):
     )
     userdata.find_one_and_update(
             {"_id": str(requester)},
-            {"$inc": {f"play_counts.{id.replace("https://www.youtube.com/watch?v=","")}": 1}},upsert=True)
+            {"$inc": {f"play_counts.{id.replace('https://www.youtube.com/watch?v=',"")}": 1}},
+            upsert=True
+        )
 
 
     # try:
