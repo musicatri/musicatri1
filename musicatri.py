@@ -613,7 +613,7 @@ def add1play(id,requester):
     )
     userdata.find_one_and_update(
             {"_id": str(requester)},
-            {"$inc": {f"play_counts.{id.replace('https://www.youtube.com/watch?v=','')}": 1}},
+            {"$inc": {f"play_counts.{id.replace('.','。')}": 1}},
             upsert=True
         )
 
@@ -641,7 +641,7 @@ async def addtoqueueyt(ctx, song):
         songaddtext=""
         for song in songs:
             if adding[ctx.guild.id]:
-                if not queues[ctx.guild.id]:
+                if ctx.guild.id not in queues.keys():
                     queues[ctx.guild.id] = {}
                 song[1]["requester"]=ctx.author.id
                 queues[ctx.guild.id][song[1]["title"]] = song
