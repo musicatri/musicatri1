@@ -102,7 +102,7 @@ for file in os.listdir(dirpath+"langfiles"):
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
-    'outtmpl': dirpath+'ytdltemp/%(id)s.%(ext)s',
+    'outtmpl': key["songcachedir"]+'ytdltemp/%(id)s.%(ext)s',
     'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
