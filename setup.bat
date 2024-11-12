@@ -1,19 +1,11 @@
-python -m venv .\pyenv
-.\pyenv\Scripts\Activate
-pip install gtts discord requests asyncio yt-dlp aiofile
-pip install pynacl openai Flask Flask[async] waitress prettytable
-echo [] > waifulist.txt
-echo {} > plays.json
-echo {} > haogan.json
-echo {} > atrikey.json
-echo {} > blacklist.json
-echo {} > langpref.json
+choco install -y python ffmpeg git nodejs
+python -m venv pyenv
+pyenv\Scripts\Activate
+pyenv\Scripts\pip install gtts discord requests asyncio yt_dlp pynacl openai flask waitress aiofiles flask_discord prettytable pymongo flask[async]
 mkdir songcache
-mkdir datacache
-mkdir ytdltemp
-python setup.py
-git clone https://github.com/Binaryify/NeteaseCloudMusicApi.git
+mkdir songcache\ytdltemp
+git clone https://github.com/musicatri/NeteaseCloudMusicApi.git
 cd NeteaseCloudMusicApi
 npm install
 cd ..
-python setup.py
+pyenv\Scripts\python setup.py

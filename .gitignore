@@ -201,3 +201,6 @@ search163chrome.py
 cookie*
 NeteaseCloudMusicApi*
 err*
+NeteaseCloudMusicApi
+package-lock.json
+yarn.lock
