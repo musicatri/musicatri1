@@ -442,12 +442,12 @@ async def searchsong(sn):
                 i["type"] = "163"
                 i["orgin"] = ("searchresul"
                               "tcache")
-                if songdata.count_documents({"_id": i["_id"]}, limit=1) == 0:
+                #if songdata.count_documents({"_id": i["_id"]}, limit=1) == 0:
                     #doc not exist
                     # with codecs.open(dirpath + "./datacache/" + str(i["id"]), encoding='utf-8', mode='w') as f:
                     #     f.write(json.dumps(i))
 
-                    songdata.insert_one(i)
+                    #songdata.insert_one(i)
                 nid.append(i)
             return tuple(nid)
 
@@ -1117,6 +1117,46 @@ async def rankings(ctx):
     msg = "```!全dc亚托莉放的最多的歌曲前二十!\n"
     #rankedlist= sorted(plays, key=plays.get, reverse=True)[:20]
     rankedlist = list(songdata.find({"play_count": { "$exists":True,"$ne": 0 }}).sort("play_count", -1).limit(20))
+    for song in rankedlist[:10]:
+        id=song["_id"]
+        if song["type"]=="163":
+            songtable.add_row([ct,  song["play_count"],str(await getsongartists(id)) + "——" + str(await getsongname(id))])
+            ct = ct + 1
+        else:
+            songtable.add_row([ct, song["play_count"], song["title"] ])
+            ct = ct + 1
+    await ctx.send(msg+str(songtable)+"```")
+    songtable = PrettyTable()
+    songtable.field_names = [" ", "  ", "   "]
+    songtable.align = 'l'
+    songtable.set_style(PLAIN_COLUMNS)
+    ct = 1
+    #the next 10 songs
+    for song in rankedlist[10:]:
+        id = song["_id"]
+        if song["type"] == "163":
+            int(id)
+            songtable.add_row([ct+10, song["play_count"], str(await getsongartists(id)) + "——" + str(await getsongname(id))])
+            ct = ct + 1
+        else:
+            songtable.add_row([ct+10, song["play_count"] , song["title"]])
+            ct = ct + 1
+    await ctx.send("```" + str(songtable) + "```")
+
+@atri.command()
+async def localrankings(ctx):
+    global songdata
+    userdata.find_one_and_update({"_id":str(ctx.author.id)},
+                                  {"$inc":{"interactions":1}},upsert=True)
+    songtable = PrettyTable()
+    songtable.field_names = ["排名","播放次数", "歌手/歌曲名"]
+    songtable.align = 'l'
+    songtable.set_style(PLAIN_COLUMNS)
+    ct = 1
+    msg = "```!"+ctx.author.display_name+"放的最多的歌曲前二十!\n"
+    #rankedlist= sorted(plays, key=plays.get, reverse=True)[:20]
+    playcounts=userdata.find({"_id":str(ctx.author.id)})["play_counts"]
+    rankedlist = list(sorted(playcounts,key=playcounts.get,reverse=True))
     for song in rankedlist[:10]:
         id=song["_id"]
         if song["type"]=="163":
