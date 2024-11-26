@@ -1533,20 +1533,20 @@ async def writeplays():
     # #         os.remove(filename)
     # #1
     # print("主人，房间已经清扫的干干净净了喵~")
-@tasks.loop(hours=48)
-async def cleancache():
-    two_weeks_ago = time.time() - 2 * 7 * 24 * 60 * 60
-    query = {
-        "$or": [
-            {"play_count": {"$lt": 2}},
-            {"last_played": {"$lt": two_weeks_ago}}
-        ]
-    }
-    songs = songdata.find(query)
-    for song in songs:
-        if exists(key["songcachedir"] + song["id"] + ".mp3"):
-            os.remove(key["songcachedir"] + song["id"] + ".mp3")
-    # await asynci
+# @tasks.loop(hours=48)
+# async def cleancache():
+#     two_weeks_ago = time.time() - 2 * 7 * 24 * 60 * 60
+#     query = {
+#         "$or": [
+#             {"play_count": {"$lt": 2}},
+#             {"last_played": {"$lt": two_weeks_ago}}
+#         ]
+#     }
+#     songs = songdata.find(query)
+#     for song in songs:
+#         if exists(key["songcachedir"] + song["id"] + ".mp3"):
+#             os.remove(key["songcachedir"] + song["id"] + ".mp3")
+#     # await asynci
 @tasks.loop(seconds=1)
 async def connecttovoice():
     if len(workaround)>0:
