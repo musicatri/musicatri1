@@ -46,8 +46,8 @@ else:
 from os import system as cmd
 from prettytable import PrettyTable
 from prettytable import PLAIN_COLUMNS
-from flask import Flask, send_from_directory,  redirect, url_for,request,send_file,render_template, session
-from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
+from flask import Flask, send_from_directory,  redirect,request,send_file
+from flask_discord import DiscordOAuth2Session#, requires_authorization, Unauthorized
 import ast
 import asyncio
 import os
@@ -55,7 +55,7 @@ import platform
 import random
 import traceback
 import aiofiles
-from datetime import date
+#from datetime import date
 from functools import partial
 import discord
 import yt_dlp
@@ -780,7 +780,7 @@ class chatgpt():
         try:
             self.messages.append({"role": "user", "content":  newmessage})
             completion =  await asyncio.to_thread( openai.ChatCompletion.create,
-                model="gpt-3.5-turbo",
+                model="gpt-4-o",
                 messages=self.messages,
 
             )
@@ -856,7 +856,6 @@ async def on_ready():
 
 async def getsongid(sn):
     b = sn.find("song?id=")
-    id = ""
     if b == -1:
         id = sn
         try:
@@ -866,23 +865,14 @@ async def getsongid(sn):
                 return False
             listtextl = sn.find("lbum?id=")
             if listtextl != -1:
-
-                # slow
                 sn = sn[listtextl + 8:]
                 return await getalbum(sn)
             listtextl = sn.find("list?id=")
             if listtextl != -1:
-                # slow
                 sn=sn[listtextl + 8:]
                 return await getplaylist(sn)
-            # reload(search163)
-            # slow
-            #id = await asyncio.get_event_loop().run_in_executor(None, search163.get_id_and_cache_data, sn)
-            # searcg 1
-
-
+            #not a link or song id
             id= await searchsong(sn)
-            #lbum?id=
 
 
     else:
@@ -1543,6 +1533,20 @@ async def writeplays():
     # #         os.remove(filename)
     # #1
     # print("主人，房间已经清扫的干干净净了喵~")
+@tasks.loop(hours=48)
+async def cleancache():
+    two_weeks_ago = time.time() - 2 * 7 * 24 * 60 * 60
+    query = {
+        "$or": [
+            {"play_count": {"$lt": 2}},
+            {"last_played": {"$lt": two_weeks_ago}}
+        ]
+    }
+    songs = songdata.find(query)
+    for song in songs:
+        if exists(key["songcachedir"] + song["id"] + ".mp3"):
+            os.remove(key["songcachedir"] + song["id"] + ".mp3")
+    # await asynci
 @tasks.loop(seconds=1)
 async def connecttovoice():
     if len(workaround)>0:
@@ -1550,9 +1554,7 @@ async def connecttovoice():
         await connectinfo[0].connect()
         players[connectinfo[1]] = discord.utils.get(atri.voice_clients, guild=connectinfo[2])
 
-
 def startatri():
-
     atri.run(key["key"])
 
 if __name__ == '__main__':

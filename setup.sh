@@ -9,7 +9,7 @@ sudo apt install nodejs  -y
 python3 -m venv pyenv
 ./pyenv/bin/python3 -m pip install gtts discord requests asyncio yt_dlp pynacl openai flask waitress aiofiles flask_discord prettytable flask[async] pymongo
 mkdir songcache
-mkdir ytdltemp
+mkdir songcache/ytdltemp
 git clone https://github.com/musicatri/NeteaseCloudMusicApi.git
 cd NeteaseCloudMusicApi
 npm install
