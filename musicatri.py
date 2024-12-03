@@ -624,7 +624,7 @@ def add1play(id,requester):
     #     plays[id] = 1
 
 
-async def playt(ctx, vid,requester):
+async def playt(ctx, vid):
     # “a” is the video url
     cs[ctx.guild.id] = [vid[1]["title"],vid[1]["thumbnail"]]
     songduration[vid[1]["title"]]=vid[1]["duration"]
@@ -632,7 +632,7 @@ async def playt(ctx, vid,requester):
     cstarttime[ctx.guild.id]=int(time.time()*1000)
     await ctx.send(    replacetrans("now_playing",ctx.author.id,vid[1]["title"]) )
     await ctx.send(replacetrans("show_web_address_user",ctx.author.id,key["songctladdr"]+str(ctx.guild.id)))
-    add1play(vid[1]["url"],requester)
+    add1play(vid[1]["url"],ctx.author.id)
 
 async def addtoqueueyt(ctx, song):
     if type(song) == type([]):
@@ -668,7 +668,7 @@ async def addtoqueueyt(ctx, song):
 
         await ctx.send(replacetrans("added_to_playlist",ctx.author.id, song[1]["title"]))
 
-async def addtoqueue163(ctx, id,requester):
+async def addtoqueue163(ctx, id):
     if id==-1:
         #canceled
         return
@@ -1228,10 +1228,10 @@ async def play(ctx, *a):
                         song = await getyt(a)
                         if type(song) == type([]):
                             fid = song.pop(0)
-                            await playt(ctx, fid,ctx.author.id)
+                            await playt(ctx, fid)
                             await addtoqueueyt(ctx, song)
                         else:
-                            await playt(ctx, song,ctx.author.id)
+                            await playt(ctx, song)
                 else:
                     if id:
                         #returned a search reult list
