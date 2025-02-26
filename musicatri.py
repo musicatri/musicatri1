@@ -136,40 +136,40 @@ songduration={}
 cstarttime={}
 pausetime={}
 
-@app.route('/profile-test')
-def home():
-    user = discordauth.fetch_user()
-    gl={}
-    for g in user.fetch_guilds():
-        gl[g.id]=g.name
-    print(gl)
-    return f"""
-        <html>
-        <head>
-        <title>{user.name}</title>
-        </head>
-        <body>
-        <img src='{user.avatar_url or user.default_avatar_url}' />
-        <br>
-        Guilds:{str(gl)}
-        <br>
-        <code></code>
-        <br />
-        </body>
-        </html>
-        """
+# @app.route('/profile-test')
+# def home():
+#     user = discordauth.fetch_user()
+#     gl={}
+#     for g in user.fetch_guilds():
+#         gl[g.id]=g.name
+#     print(gl)
+#     return f"""
+#         <html>
+#         <head>
+#         <title>{user.name}</title>
+#         </head>
+#         <body>
+#         <img src='{user.avatar_url or user.default_avatar_url}' />
+#         <br>
+#         Guilds:{str(gl)}
+#         <br>
+#         <code></code>
+#         <br />
+#         </body>
+#         </html>
+#         """
 
-@app.route('/getprofile')
-def getprofile():
-    try:
-        user=discordauth.fetch_user()
-        userjson=user.to_json()
-        avatar=user.avatar_url or user.default_avatar_url
-        userjson["avatar"] = avatar
-        userjson["login"] = True
-        return json.dumps(userjson)
-    except:
-        return json.dumps({"login":False})
+# @app.route('/getprofile')
+# def getprofile():
+#     try:
+#         user=discordauth.fetch_user()
+#         userjson=user.to_json()
+#         avatar=user.avatar_url or user.default_avatar_url
+#         userjson["avatar"] = avatar
+#         userjson["login"] = True
+#         return json.dumps(userjson)
+#     except:
+#         return json.dumps({"login":False})
 
 
 
